@@ -70,16 +70,44 @@ def answer_query(query: str, settings: Optional[Settings] = None) -> str:
     if intent is Intent.FACTUAL_SCHEME and scheme_id is None:
         return build_refusal(Intent.UNCLEAR, None, settings)
 
+    # Process FAQs without a scheme are not answerable from our Groww scheme pages.
+    if intent is Intent.FACTUAL_PROCESS and scheme_id is None:
+        return build_refusal(Intent.OUT_OF_CORPUS, None, settings)
+
     chunks = retrieve(query, settings, scheme_id=scheme_id)
     if not chunks:
         return build_refusal(Intent.OUT_OF_CORPUS, scheme_id, settings)
 
     answer = answer_from_chunks(query, chunks, settings)
+    # Model sometimes says "not in corpus" but formatter still attaches a Source —
+    # treat that as out-of-corpus refusal, never a fake citation.
+    if _looks_like_no_fact(answer):
+        return build_refusal(Intent.OUT_OF_CORPUS, scheme_id, settings)
+
     if audit_response(answer).ok:
         return answer
 
     retry = answer_from_chunks(query, chunks, settings, strict=True)
+    if _looks_like_no_fact(retry):
+        return build_refusal(Intent.OUT_OF_CORPUS, scheme_id, settings)
     if audit_response(retry).ok:
         return retry
 
     return SAFE_FALLBACK
+
+
+def _looks_like_no_fact(answer: str) -> bool:
+    body = answer.split("Source:", 1)[0].lower()
+    cues = (
+        "do not have that fact",
+        "don't have that fact",
+        "not in the corpus",
+        "not in the indexed",
+        "couldn't find that fact",
+        "could not find that fact",
+        "i don't know",
+        "no information in the context",
+        "context does not",
+        "not provided in the context",
+    )
+    return any(c in body for c in cues)

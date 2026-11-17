@@ -1,0 +1,13 @@
+# Monorepo: Railway may build from repo root.
+# Prefer setting service Root Directory to /backend in the Railway UI
+# and Config File path to /backend/railway.toml.
+# This root file is a fallback start command if Root Directory is still /.
+
+[build]
+builder = "RAILPACK"
+
+[deploy]
+startCommand = "cd backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"

@@ -96,6 +96,29 @@ def test_orchestrator_empty_retrieval_refuses(monkeypatch):
     assert "corpus" in out.lower() or "couldn't find" in out.lower() or "indexed" in out.lower()
 
 
+def test_orchestrator_process_without_scheme_refuses(monkeypatch):
+    from src.rag import orchestrator
+
+    called = {"retrieve": False}
+
+    def fake_retrieve(*_a, **_k):
+        called["retrieve"] = True
+        return [CHUNK]
+
+    monkeypatch.setattr(orchestrator, "get_settings", lambda: SETTINGS)
+    monkeypatch.setattr(
+        orchestrator, "classify", lambda q, s=None: Intent.FACTUAL_PROCESS
+    )
+    monkeypatch.setattr(orchestrator, "detect_scheme_id", lambda q: None)
+    monkeypatch.setattr(orchestrator, "retrieve", fake_retrieve)
+    out = orchestrator.answer_query(
+        "How can I download my capital gains report for mutual funds?"
+    )
+    assert called["retrieve"] is False
+    assert "Source:" not in out
+    assert "Last updated from sources:" not in out
+
+
 def test_orchestrator_retries_once_when_audit_fails(monkeypatch):
     from src.rag import orchestrator
 
