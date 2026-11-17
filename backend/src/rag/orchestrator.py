@@ -47,8 +47,14 @@ def _looks_like_pii(query: str) -> bool:
     return any(hint in q for hint in PII_HINTS)
 
 
+def _normalize_query(query: str) -> str:
+    # Common typo: "exist load" → "exit load" (helps retrieval + cues).
+    return re.sub(r"\bexist\s+load\b", "exit load", query, flags=re.IGNORECASE)
+
+
 def answer_query(query: str, settings: Optional[Settings] = None) -> str:
     settings = settings or get_settings()
+    query = _normalize_query(query)
 
     # Fail closed on PII before classify/retrieve; do not log the raw query.
     if _looks_like_pii(query):

@@ -1,4 +1,6 @@
 .env
+.env.local
+.superpowers/
 .venv/
 __pycache__/
 *.pyc
@@ -6,5 +8,10 @@ __pycache__/
 corpus_index/
 data/raw/
 data/processed/
+backend/corpus_index/
+backend/data/raw/
+backend/data/processed/
+frontend/node_modules/
+frontend/.next/
 *.egg-info/
 .DS_Store

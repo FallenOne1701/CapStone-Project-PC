@@ -33,7 +33,7 @@ def get_settings() -> Settings:
         )
     return Settings(
         groq_api_key=key,
-        chat_model=os.getenv("GROQ_CHAT_MODEL", "llama-3.3-70b-versatile"),
+        chat_model=os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-120b"),
         groq_base_url=os.getenv(
             "GROQ_BASE_URL", "https://api.groq.com/openai/v1"
         ),

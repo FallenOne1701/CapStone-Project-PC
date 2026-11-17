@@ -70,6 +70,7 @@ FACTUAL_SCHEME_CUES = (
     "expense ratio",
     "expense",
     "exit load",
+    "exist load",  # common typo for exit load
     "minimum sip",
     "min sip",
     "sip",
