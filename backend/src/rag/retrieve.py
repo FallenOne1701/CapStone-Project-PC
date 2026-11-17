@@ -122,10 +122,14 @@ def retrieve(
     if resolved_scheme and section:
         n_results = min(settings.top_k, 2)
 
+    from src.ingest.ensure_index import ensure_index
+
+    chroma_path = ensure_index(settings)
+
     model = SentenceTransformer(settings.embed_model)
     embedding = list(map(float, model.encode([query], show_progress_bar=False)[0]))
 
-    client = chromadb.PersistentClient(path=str(settings.chroma_path))
+    client = chromadb.PersistentClient(path=str(chroma_path))
     collection = client.get_collection(COLLECTION_NAME)
 
     docs, metas, dists = _query_collection(collection, embedding, where, n_results)

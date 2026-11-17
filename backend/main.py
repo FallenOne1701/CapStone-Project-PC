@@ -41,8 +41,19 @@ class AskRequest(BaseModel):
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+    from src.ingest.ensure_index import index_status
+
+    try:
+        idx = index_status()
+        active = idx.get("active", {})
+        ok = bool(active.get("collection_exists") and active.get("chunk_count", 0) > 0)
+        return {
+            "status": "ok" if ok else "degraded",
+            "index": idx,
+        }
+    except Exception as exc:  # pragma: no cover
+        return {"status": "degraded", "error": str(exc)}
 
 
 @app.post("/api/ask")

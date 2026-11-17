@@ -27,7 +27,7 @@ uvicorn main:app --reload --port 8000
 - Health: `GET http://127.0.0.1:8000/health`
 - Ask: `POST http://127.0.0.1:8000/api/ask` with `{"question":"..."}`
 
-Ensure `backend/corpus_index/` exists (run ingest/index from existing scripts if needed).
+Ensure `backend/corpus_index/` exists (shipped in git for Railway; locally rebuild with `python -m src.ingest.index` from `backend/` if needed).
 
 ### Frontend
 
