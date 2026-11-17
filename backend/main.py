@@ -12,10 +12,12 @@ from src.api.respond import map_answer_to_response
 from src.config import get_settings
 from src.rag.orchestrator import answer_query
 
+APP_BUILD = "4a1619f-index-ensure"
+
 app = FastAPI(
     title="Mutual Fund FAQ Assistant API",
     description="Facts-only RAG FAQ for five HDFC schemes on Groww.",
-    version="1.0.0",
+    version="1.0.1",
 )
 
 
@@ -50,10 +52,11 @@ def health() -> dict[str, Any]:
         ok = bool(active.get("collection_exists") and active.get("chunk_count", 0) > 0)
         return {
             "status": "ok" if ok else "degraded",
+            "build": APP_BUILD,
             "index": idx,
         }
     except Exception as exc:  # pragma: no cover
-        return {"status": "degraded", "error": str(exc)}
+        return {"status": "degraded", "build": APP_BUILD, "error": str(exc)}
 
 
 @app.post("/api/ask")
