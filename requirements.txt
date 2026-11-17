@@ -1,3 +1,6 @@
 # Backend dependencies live in backend/requirements.txt
 # Install: pip install -r backend/requirements.txt
+# Listed here so Railpack (repo-root deploy) detects FastAPI/uvicorn start deps.
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
 -r backend/requirements.txt
