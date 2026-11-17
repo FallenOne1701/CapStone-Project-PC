@@ -5,13 +5,14 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-corpus_index/
-data/raw/
-data/processed/
-backend/corpus_index/
+# Root-level scratch only (leading / = repo root)
+/corpus_index/
+/data/raw/
+/data/processed/
+# Keep raw HTML out of git; processed + chroma index ship for Railway
 backend/data/raw/
-backend/data/processed/
 frontend/node_modules/
 frontend/.next/
 *.egg-info/
 .DS_Store
+frontend/.env.example
