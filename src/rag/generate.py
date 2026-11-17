@@ -21,7 +21,11 @@ def _format_context(chunks: list[RetrievedChunk]) -> str:
 
 
 def generate_factual_answer(
-    query: str, chunks: list[RetrievedChunk], settings: Settings
+    query: str,
+    chunks: list[RetrievedChunk],
+    settings: Settings,
+    *,
+    strict: bool = False,
 ) -> str:
     """Return plain model body text only (no citation/footer)."""
     system_prompt = _load_system_prompt()
@@ -30,6 +34,11 @@ def generate_factual_answer(
         f"Context:\n{_format_context(chunks)}\n\n"
         "Answer using only the context. Do not include a Source URL or footer."
     )
+    if strict:
+        user_payload += (
+            "\n\nStricter constraints: at most 3 sentences; "
+            "no advice, recommendations, comparisons, or URLs in the body."
+        )
     client = get_groq_client(settings)
     response = client.chat.completions.create(
         model=settings.chat_model,
@@ -44,8 +53,12 @@ def generate_factual_answer(
 
 
 def answer_from_chunks(
-    query: str, chunks: list[RetrievedChunk], settings: Settings
+    query: str,
+    chunks: list[RetrievedChunk],
+    settings: Settings,
+    *,
+    strict: bool = False,
 ) -> str:
-    body = generate_factual_answer(query, chunks, settings)
+    body = generate_factual_answer(query, chunks, settings, strict=strict)
     top = chunks[0]
     return format_factual_answer(body, top.source_url, top.as_of_date)
