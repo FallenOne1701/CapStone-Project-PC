@@ -1,11 +1,10 @@
 import type { AskResponse } from "./types";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-  "http://127.0.0.1:8000";
+/** Same-origin proxy → Railway (avoids browser CORS / localhost fallback). */
+const ASK_PATH = "/api/ask";
 
 export async function askQuestion(question: string): Promise<AskResponse> {
-  const res = await fetch(`${API_URL}/api/ask`, {
+  const res = await fetch(ASK_PATH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question }),

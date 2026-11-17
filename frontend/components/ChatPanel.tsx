@@ -39,7 +39,7 @@ export function ChatPanel() {
           answer:
             err instanceof Error
               ? `Could not answer right now: ${err.message}`
-              : "Could not reach the FAQ API. Is the backend running on port 8000?",
+              : "Could not reach the FAQ API. Check BACKEND_URL / Railway.",
           educational_url: "https://www.amfiindia.com/investor-corner/online-centre/onlinecentrelanding",
           reason: "error",
         },
