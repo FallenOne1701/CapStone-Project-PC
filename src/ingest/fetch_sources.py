@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import requests
 
 from src.config import ROOT
-from src.ingest.clean import extract_text
+from src.ingest.clean import extract_as_of_date, extract_text
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -49,12 +49,22 @@ def fetch_all(
         if force or not raw_path.exists():
             resp = session.get(source_url, timeout=60)
             resp.raise_for_status()
+            final_host = urlparse(resp.url).netloc.lower().removeprefix("www.")
+            if final_host != ALLOWED_HOST:
+                raise ValueError(f"Redirect left Groww domain: {resp.url}")
             raw_path.write_bytes(resp.content)
 
         text = extract_text(raw_path)
         processed_path.write_text(text, encoding="utf-8")
+        as_of = extract_as_of_date(raw_path)
+        if as_of:
+            doc["as_of_date"] = as_of
         processed_paths.append(processed_path)
 
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return processed_paths
 
 

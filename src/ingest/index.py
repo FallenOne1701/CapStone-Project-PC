@@ -56,7 +56,14 @@ def build_index(
 
     settings.chroma_path.mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(path=str(settings.chroma_path))
-    collection = client.get_or_create_collection(name=COLLECTION_NAME)
+    try:
+        client.delete_collection(COLLECTION_NAME)
+    except Exception:
+        pass
+    collection = client.get_or_create_collection(
+        name=COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine"},
+    )
 
     model = SentenceTransformer(settings.embed_model)
 
@@ -64,7 +71,6 @@ def build_index(
         batch = all_chunks[start : start + BATCH_SIZE]
         texts = [c.text for c in batch]
         embeddings = model.encode(texts, show_progress_bar=False)
-        # sentence-transformers may return numpy array
         vectors = [list(map(float, row)) for row in embeddings]
         collection.upsert(
             ids=[c.chunk_id for c in batch],

@@ -4,8 +4,11 @@ import re
 from dataclasses import dataclass
 
 
+# Canonical section headers only (line must be exactly the header, case-insensitive).
 SECTION_HEADERS = re.compile(
-    r"(?im)^(expense ratio|exit load|minimum sip|sip|riskometer|benchmark|lock-?in|investment objective)\b.*$"
+    r"(?im)^(expense ratio|exit load|minimum sip|minimum lumpsum|riskometer|"
+    r"benchmark|lock-in|investment objective|scheme|fund house|category|"
+    r"stamp duty|nav)$"
 )
 
 
@@ -26,6 +29,8 @@ def _split_fixed(text: str, max_chars: int, overlap: int) -> list[str]:
     text = text.strip()
     if not text:
         return []
+    if overlap >= max_chars:
+        overlap = max(0, max_chars // 8)
     if len(text) <= max_chars:
         return [text]
     parts: list[str] = []
@@ -35,7 +40,10 @@ def _split_fixed(text: str, max_chars: int, overlap: int) -> list[str]:
         parts.append(text[start:end].strip())
         if end >= len(text):
             break
-        start = max(0, end - overlap)
+        next_start = end - overlap
+        if next_start <= start:
+            next_start = end
+        start = next_start
     return [p for p in parts if p]
 
 
@@ -51,12 +59,12 @@ def _sections(text: str) -> list[tuple[str, str]]:
             sections.append(("general", preamble))
 
     for i, match in enumerate(matches):
-        section_name = match.group(0).strip()
+        section_name = match.group(0).strip().lower()
         start = match.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         body = text[start:end].strip()
-        content = f"{section_name}\n{body}".strip() if body else section_name
-        sections.append((section_name.lower(), content))
+        content = f"{match.group(0).strip()}\n{body}".strip() if body else match.group(0).strip()
+        sections.append((section_name, content))
     return sections
 
 
@@ -65,8 +73,13 @@ def chunk_document(
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
     index = 0
+    scheme_prefix = f"{meta['scheme_name']}. "
     for section_name, section_text in _sections(text):
         for piece in _split_fixed(section_text, max_chars, overlap):
+            # Prefix scheme name in embedded text to reduce cross-scheme collisions.
+            embedded = piece if piece.lower().startswith(meta["scheme_name"].lower()) else (
+                scheme_prefix + piece
+            )
             chunks.append(
                 Chunk(
                     chunk_id=f"{meta['scheme_id']}-{meta['doc_type']}-{index}",
@@ -77,7 +90,7 @@ def chunk_document(
                     source_url=meta["source_url"],
                     as_of_date=meta["as_of_date"],
                     section=section_name,
-                    text=piece,
+                    text=embedded,
                 )
             )
             index += 1

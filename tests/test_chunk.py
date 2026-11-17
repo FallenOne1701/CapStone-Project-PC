@@ -32,3 +32,16 @@ def test_chunk_ids_are_stable_and_section_set():
     chunks = chunk_document(text, META)
     assert chunks[0].chunk_id == f"{META['scheme_id']}-{META['doc_type']}-0"
     assert any(c.section.lower().startswith("expense") or c.section == "expense ratio" for c in chunks)
+
+
+def test_historic_exit_load_row_is_not_a_section_header():
+    text = (
+        "Exit Load\nExit load of 1% if redeemed within 1 year.\n"
+        "Exit load of 1% if redeemed within 18 months\n"
+        "Minimum SIP\nMinimum SIP amount is Rs 100."
+    )
+    chunks = chunk_document(text, META)
+    sections = {c.section for c in chunks}
+    assert "exit load" in sections
+    assert "minimum sip" in sections
+    assert not any("18 months" in s for s in sections)

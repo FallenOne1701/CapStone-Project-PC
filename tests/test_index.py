@@ -60,9 +60,57 @@ def test_build_index_upserts_chunks_with_groww_metadata(tmp_path: Path, monkeypa
     client = chromadb.PersistentClient(path=str(chroma_path))
     coll = client.get_collection("mf_faq")
     assert coll.count() == count
+    assert (coll.metadata or {}).get("hnsw:space") == "cosine"
     got = coll.get(include=["metadatas", "documents"])
     meta = got["metadatas"][0]
     assert meta["scheme_id"] == "hdfc-large-cap-fund-direct-growth"
     assert "groww.in" in meta["source_url"]
     assert meta["as_of_date"] == "2025-11-17"
     assert got["documents"][0].strip()
+
+
+def test_build_index_resets_stale_chunks(tmp_path: Path, monkeypatch):
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    path = processed / "hdfc-large-cap-fund-direct-growth.txt"
+    path.write_text(
+        "Expense Ratio\n" + ("Direct plan expense ratio is 0.80%. " * 40),
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "amc": "HDFC",
+                "documents": [
+                    {
+                        "scheme_id": "hdfc-large-cap-fund-direct-growth",
+                        "scheme_name": "HDFC Large Cap Fund - Direct Growth",
+                        "doc_type": "groww_scheme_page",
+                        "source_url": "https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth",
+                        "as_of_date": "2026-11-16",
+                        "local_name": "hdfc-large-cap-fund-direct-growth.html",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    chroma_path = tmp_path / "chroma"
+    settings = MagicMock()
+    settings.embed_model = "fake-model"
+    settings.chroma_path = chroma_path
+    monkeypatch.setattr(
+        "src.ingest.index.SentenceTransformer",
+        lambda *_a, **_k: _FakeEmbedding(),
+    )
+
+    first = build_index(processed, manifest_path, settings)
+    path.write_text("Expense Ratio\nDirect plan expense ratio is 0.80%.\n", encoding="utf-8")
+    second = build_index(processed, manifest_path, settings)
+    assert second < first
+
+    import chromadb
+
+    coll = chromadb.PersistentClient(path=str(chroma_path)).get_collection("mf_faq")
+    assert coll.count() == second
