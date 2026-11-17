@@ -1,0 +1,5 @@
+Classify the user query into exactly one intent:
+FACTUAL_SCHEME, FACTUAL_PROCESS, PERFORMANCE, ADVISORY, COMPARATIVE,
+PII_SENSITIVE, OUT_OF_CORPUS, or UNCLEAR.
+Prefer false refusals over unsafe answers when uncertain.
+Return only the intent label.
