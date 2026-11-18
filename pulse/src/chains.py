@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from typing import TypeVar
+
+from langchain_core.runnables import Runnable
 from langchain_groq import ChatGroq
+from pydantic import BaseModel
 
 from src.config import Settings, get_settings
+
+T = TypeVar("T", bound=BaseModel)
 
 
 def load_prompt(name: str, settings: Settings | None = None) -> str:
@@ -20,3 +26,18 @@ def build_chat_model(settings: Settings | None = None) -> ChatGroq:
         model=settings.groq_chat_model,
         temperature=0.2,
     )
+
+
+def structured_invoke(
+    llm: ChatGroq,
+    prompt_chain: Runnable,
+    schema: type[T],
+    inputs: dict,
+) -> T:
+    """Prefer tool/structured output; fall back to JSON mode (Groq tool_use_failed)."""
+    try:
+        return (prompt_chain | llm.with_structured_output(schema)).invoke(inputs)
+    except Exception:
+        return (
+            prompt_chain | llm.with_structured_output(schema, method="json_mode")
+        ).invoke(inputs)

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field, field_validator
 
-from src.chains import build_chat_model, load_prompt
+from src.chains import build_chat_model, load_prompt, structured_invoke
 from src.config import Settings, get_settings
 from src.fetch_play import window_bounds
 from src.models import PulseDoc, Review, ThemeResult
@@ -102,7 +102,6 @@ def write_pulse(
 
     candidates = select_quote_candidates(reviews, theme_result)
     llm = build_chat_model(settings)
-    structured = llm.with_structured_output(LLMPulse)
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", load_prompt("pulse_system.txt", settings)),
@@ -113,12 +112,14 @@ def write_pulse(
             ),
         ]
     )
-    chain = prompt | structured
-    payload: LLMPulse = chain.invoke(
+    payload: LLMPulse = structured_invoke(
+        llm,
+        prompt,
+        LLMPulse,
         {
             "themes": ", ".join(top_labels),
             "quotes": "\n".join(f"- {q}" for q in candidates),
-        }
+        },
     )
     title = f"Groww Weekly Review Pulse — {end.isoformat()}"
     doc = PulseDoc(
