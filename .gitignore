@@ -16,3 +16,9 @@ frontend/.next/
 *.egg-info/
 .DS_Store
 frontend/.env.example
+
+# Pulse track
+pulse/.env
+pulse/data/raw/*
+!pulse/data/raw/.gitkeep
+!pulse/data/samples/
