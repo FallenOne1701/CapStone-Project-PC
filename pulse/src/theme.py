@@ -29,11 +29,11 @@ def rank_top_themes(result: ThemeResult, n: int = 3) -> ThemeResult:
     return ThemeResult(themes=enforce_theme_cap(result.themes), top_theme_ids=top)
 
 
-def _reviews_for_prompt(reviews: list[Review], limit: int = 40) -> str:
+def _reviews_for_prompt(reviews: list[Review], limit: int = 25) -> str:
     # Keep the prompt small — large batches make Groq json_schema fail empty.
     lines = []
     for r in reviews[:limit]:
-        lines.append(f"- id={r.review_id} rating={r.rating}: {r.text[:160]}")
+        lines.append(f"- id={r.review_id} rating={r.rating}: {r.text[:120]}")
     return "\n".join(lines)
 
 
