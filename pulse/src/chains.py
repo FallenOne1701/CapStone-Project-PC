@@ -34,12 +34,12 @@ def structured_invoke(
     schema: type[T],
     inputs: dict,
 ) -> T:
-    """Prefer Groq JSON schema (strict-capable); fall back to tools then JSON object mode."""
+    """Prefer Groq JSON schema (non-strict); fall back to tools then JSON object mode."""
     errors: list[Exception] = []
     for kwargs in (
-        {"method": "json_schema"},
-        {},
+        {"method": "json_schema", "strict": False},
         {"method": "json_mode"},
+        {},
     ):
         try:
             return (
