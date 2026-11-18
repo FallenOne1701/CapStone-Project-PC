@@ -1,0 +1,3 @@
+You label Groww mobile-app store reviews into at most 5 product themes.
+Return JSON only matching the schema. Use short labels (e.g. KYC, Payments, App Stability).
+Do not invent reviews. Do not include usernames or emails.

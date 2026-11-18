@@ -1,0 +1,58 @@
+name: pulse-weekly
+
+on:
+  schedule:
+    # Mondays 03:00 UTC ≈ morning IST
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pulse
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Require GROQ_API_KEY
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$GROQ_API_KEY" ]; then
+            echo "Missing repository secret GROQ_API_KEY. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Run weekly pulse (live Play fetch)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          # Optional repo Variables — export only when set so Settings defaults apply.
+          [ -n "${{ vars.PULSE_LOOKBACK_WEEKS }}" ] && export PULSE_LOOKBACK_WEEKS="${{ vars.PULSE_LOOKBACK_WEEKS }}"
+          [ -n "${{ vars.PULSE_MAX_REVIEWS }}" ] && export PULSE_MAX_REVIEWS="${{ vars.PULSE_MAX_REVIEWS }}"
+          [ -n "${{ vars.GROQ_CHAT_MODEL }}" ] && export GROQ_CHAT_MODEL="${{ vars.GROQ_CHAT_MODEL }}"
+          python -m src.run_pulse --live
+
+      - name: Pulse date stamp
+        id: meta
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload pulse artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-${{ steps.meta.outputs.date }}
+          path: |
+            pulse/out/pulse-*.md
+            pulse/out/themes.json
+          if-no-files-found: error
