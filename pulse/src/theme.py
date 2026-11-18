@@ -48,7 +48,9 @@ def cluster_themes(
             ("system", load_prompt("theme_system.txt", settings)),
             (
                 "human",
-                "Assign each review to at most 5 themes.\nReviews:\n{reviews}",
+                "Return ONE object: {{\"themes\":[{{\"theme_id\",\"label\",\"review_ids\"}}…]}} "
+                "with at most 5 themes. Each theme lists review_ids that belong to it. "
+                "Do NOT return a per-review list.\nReviews:\n{reviews}",
             ),
         ]
     )
