@@ -3,7 +3,7 @@ from __future__ import annotations
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
-from src.chains import build_chat_model, load_prompt
+from src.chains import build_chat_model, load_prompt, structured_invoke
 from src.config import Settings, get_settings
 from src.models import Review, Theme, ThemeResult
 
@@ -43,7 +43,6 @@ def cluster_themes(
         raise ValueError("cannot cluster themes: no reviews in window")
     settings = settings or get_settings()
     llm = build_chat_model(settings)
-    structured = llm.with_structured_output(LLMThemePayload)
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", load_prompt("theme_system.txt", settings)),
@@ -53,9 +52,8 @@ def cluster_themes(
             ),
         ]
     )
-    chain = prompt | structured
-    payload: LLMThemePayload = chain.invoke(
-        {"reviews": _reviews_for_prompt(reviews)}
+    payload: LLMThemePayload = structured_invoke(
+        llm, prompt, LLMThemePayload, {"reviews": _reviews_for_prompt(reviews)}
     )
     themes: list[Theme] = []
     for t in payload.themes:
