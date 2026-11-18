@@ -37,12 +37,11 @@ jobs:
       - name: Run weekly pulse (live Play fetch)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          # Default matches pulse Settings / .env.example; override via repo Variable if needed.
+          # Defaults match local .env.example; override via repo Variables if needed.
           GROQ_CHAT_MODEL: ${{ vars.GROQ_CHAT_MODEL != '' && vars.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b' }}
-        run: |
-          [ -n "${{ vars.PULSE_LOOKBACK_WEEKS }}" ] && export PULSE_LOOKBACK_WEEKS="${{ vars.PULSE_LOOKBACK_WEEKS }}"
-          [ -n "${{ vars.PULSE_MAX_REVIEWS }}" ] && export PULSE_MAX_REVIEWS="${{ vars.PULSE_MAX_REVIEWS }}"
-          python -m src.run_pulse --live
+          PULSE_MAX_REVIEWS: ${{ vars.PULSE_MAX_REVIEWS != '' && vars.PULSE_MAX_REVIEWS || '100' }}
+          PULSE_LOOKBACK_WEEKS: ${{ vars.PULSE_LOOKBACK_WEEKS != '' && vars.PULSE_LOOKBACK_WEEKS || '10' }}
+        run: python -m src.run_pulse --live
 
       - name: Pulse date stamp
         id: meta

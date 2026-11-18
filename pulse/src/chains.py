@@ -34,10 +34,17 @@ def structured_invoke(
     schema: type[T],
     inputs: dict,
 ) -> T:
-    """Prefer tool/structured output; fall back to JSON mode (Groq tool_use_failed)."""
-    try:
-        return (prompt_chain | llm.with_structured_output(schema)).invoke(inputs)
-    except Exception:
-        return (
-            prompt_chain | llm.with_structured_output(schema, method="json_mode")
-        ).invoke(inputs)
+    """Prefer Groq JSON schema (strict-capable); fall back to tools then JSON object mode."""
+    errors: list[Exception] = []
+    for kwargs in (
+        {"method": "json_schema"},
+        {},
+        {"method": "json_mode"},
+    ):
+        try:
+            return (
+                prompt_chain | llm.with_structured_output(schema, **kwargs)
+            ).invoke(inputs)
+        except Exception as e:  # noqa: BLE001 — try next structured-output method
+            errors.append(e)
+    raise errors[-1]
