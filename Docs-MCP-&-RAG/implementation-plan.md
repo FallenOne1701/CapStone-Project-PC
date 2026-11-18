@@ -1263,7 +1263,7 @@ git commit -m "feat(pulse): CLI run_pulse sample and live paths"
 - Consumes: `pulse/out/pulse-YYYY-MM-DD.md`, env `PULSE_DRAFT_TO`, env `PULSE_DOC_ID` (pre-created Google Doc)
 - Produces: operator checklist that appends pulse content to that Doc and creates a Gmail draft via MCP-Server-1 tools
 
-- [ ] **Step 1: Write `Docs-MCP-&-RAG/mcp-runbook.md`**
+- [x] **Step 1: Write `Docs-MCP-&-RAG/mcp-runbook.md`**
 
 Must include:
 
