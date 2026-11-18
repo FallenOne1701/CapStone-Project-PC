@@ -1288,9 +1288,9 @@ Include this tool table (already bound — verify status when dry-running):
 | Create Gmail draft | `gmail_create_draft` | |
 | Send email | `gmail_send_email` | unused for v1 |
 
-- [ ] **Step 2: Dry-run the runbook once in the agent environment** (human/agent): append sample pulse + create draft. Confirm tools appear in Cursor and mark Status in the table.
+- [x] **Step 2: Dry-run the runbook once in the agent environment** (human/agent): append sample pulse + create draft. Confirm tools appear in Cursor and mark Status in the table.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add Docs-MCP-&-RAG/mcp-runbook.md

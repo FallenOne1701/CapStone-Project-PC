@@ -10,8 +10,8 @@ This path does **not** use `google-api-python-client`, LangChain Google toolkits
 
 | Capability | MCP tool (MCP-Server-1) | Status |
 |------------|-------------------------|--------|
-| Publish pulse into Doc | `google_docs_append_content` | pending dry-run (server not registered in this Cursor session) |
-| Create Gmail draft | `gmail_create_draft` | pending dry-run (server not registered in this Cursor session) |
+| Publish pulse into Doc | `google_docs_append_content` | verified (local MCP HTTP dry-run 2026-11-18) |
+| Create Gmail draft | `gmail_create_draft` | verified (local MCP HTTP dry-run 2026-11-18) |
 | Send email | `gmail_send_email` | unused for v1 |
 
 Update **Status** to `verified` after a successful dry-run (Step 2 below).
@@ -151,12 +151,20 @@ After dry-run or weekly publish:
 
 | Field | Value |
 |-------|-------|
-| Date | |
-| Pulse file | `pulse/out/pulse-____-__-__.md` |
-| `PULSE_DOC_ID` | (set; do not commit) |
-| Doc append | PASS / FAIL |
-| Gmail draft | PASS / FAIL |
-| Notes | |
+| Date | 2026-11-18 |
+| Pulse file | `pulse/out/pulse-2026-11-18.md` |
+| `PULSE_DOC_ID` | set in `pulse/.env` (not committed) |
+| Doc append | PASS — 859 characters appended to `PULSE_DOC_ID` |
+| Gmail draft | PASS — `draft_id` created (not sent) |
+| Notes | Local MCP-Server-1 HTTP after `npm run auth`. Doc: https://docs.google.com/document/d/1AqN2ubfts7Ub6SWPfRj8pIp_rLiVv7xk7x9Klhoa3VY/edit |
+
+### Local auth (Railway is currently 404)
+
+1. Create OAuth **Desktop** client in [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials); enable Gmail API + Docs API.
+2. Put `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` in `C:\Users\PC\Desktop\CapStone Project\MCP-Server-1\.env`.
+3. In that folder: `npm run auth` (browser consent → writes `token.json`).
+4. Reload Cursor MCP (Tools & MCP) so `google-workspace-local` connects.
+5. Tell the agent to re-run: `python pulse/scripts/dry_run_mcp_delivery.py` **or** call the two MCP tools from chat.
 
 ---
 
