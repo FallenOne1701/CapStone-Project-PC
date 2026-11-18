@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     groq_api_key: str = ""
-    groq_chat_model: str = "llama-3.3-70b-versatile"
+    groq_chat_model: str = "openai/gpt-oss-120b"
     pulse_lookback_weeks: int = 10
     pulse_app_id: str = "com.nextbillion.groww"
     pulse_lang: str = "en"
