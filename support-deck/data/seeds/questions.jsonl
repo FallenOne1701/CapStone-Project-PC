@@ -1,0 +1,3 @@
+{"id": "seed-001", "text": "What is the exit load on Groww mutual funds?", "expect": ["factual", "drafted"]}
+{"id": "seed-002", "text": "Should I buy this SIP now for maximum returns?", "expect": ["advice", "not_covered"]}
+{"id": "seed-003", "text": "Why was I charged a fee on redemption?", "expect": ["fee"]}
