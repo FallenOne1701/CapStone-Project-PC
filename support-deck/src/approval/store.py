@@ -76,6 +76,16 @@ class ApprovalStore:
             raise KeyError(f"unknown action_id: {action_id}")
         return _row_to_action(row)
 
+    def list_all(self) -> list[ApprovalAction]:
+        con = connect(self.db_path)
+        try:
+            rows = con.execute(
+                "SELECT * FROM approval_actions ORDER BY created_at DESC, action_id ASC"
+            ).fetchall()
+        finally:
+            con.close()
+        return [_row_to_action(r) for r in rows]
+
     def update_fields(
         self,
         action_id: str,

@@ -42,6 +42,9 @@ class ApprovalService:
     def get_action(self, action_id: str) -> ApprovalAction:
         return self.store.get(action_id)
 
+    def list_actions(self) -> list[ApprovalAction]:
+        return self.store.list_all()
+
     def edit_action(self, action_id: str, content: str) -> ApprovalAction:
         """Edit only ``action_id``; siblings unchanged."""
         return self.store.update_fields(

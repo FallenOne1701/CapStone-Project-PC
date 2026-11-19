@@ -407,11 +407,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 | POST | `/approvals/{id}/reject` | Reject only |
 | GET | `/sources` | Claims/sources panel data |
 
-- [ ] **Step 1: Failing API tests for enqueue → drafted/not_covered; approve isolation**
+- [x] **Step 1: Failing API tests for enqueue → drafted/not_covered; approve isolation**
 
-- [ ] **Step 2: Implement routers; wire CORS for local frontend**
+- [x] **Step 2: Implement routers; wire CORS for local frontend**
 
-- [ ] **Step 3: Commit** — `support-deck: FastAPI operator API`
+- [x] **Step 3: Commit** — `support-deck: FastAPI operator API`
 
 ### Task 12: Next.js Support Deck views
 
