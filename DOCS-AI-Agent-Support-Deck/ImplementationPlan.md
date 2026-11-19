@@ -333,16 +333,16 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - Orchestrator: if policy refuse → `not_covered` or refused draft path per Architecture (routing `not_covered` / escalate); else one citation URL; ≤3 sentences
 - Reviewer: flags for cap/PII/missing citation; may force `not_covered` if ungrounded
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
   - factual in-corpus → `drafted` with citation
   - unknown → `not_covered` with non-empty `searched`
   - advisory → refused / not answered as advice
 
-- [ ] **Step 2: Implement orchestrator + reviewer + `process_question` persisting `QueueItem`**
+- [x] **Step 2: Implement orchestrator + reviewer + `process_question` persisting `QueueItem`**
 
-- [ ] **Step 3: On `drafted`, create `reply_finalize` pending approval action**
+- [x] **Step 3: On `drafted`, create `reply_finalize` pending approval action**
 
-- [ ] **Step 4: Commit** — `support-deck: desk pipeline to queue + reply approval`
+- [x] **Step 4: Commit** — `support-deck: desk pipeline to queue + reply approval`
 
 ---
 
