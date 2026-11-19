@@ -31,7 +31,14 @@ Expected automated homes (from plan Task 14):
 | Edit isolation | `tests/test_eval_edits.py` |
 | Grounding / compliance | `tests/test_eval_grounding.py` |
 
-- [ ] Seed file present: `support-deck/data/seeds/questions.jsonl` (**≥20** rows; see §4)
+Helpers / fixtures: `tests/eval_helpers.py`, `data/fixtures/eval_claims_checklist.json` (scripted ≥15-claim sample).
+
+```bash
+cd support-deck
+pytest tests/test_eval_feasibility.py tests/test_eval_edits.py tests/test_eval_grounding.py -v
+```
+
+- [x] Seed file present: `support-deck/data/seeds/questions.jsonl` (**≥20** rows; see §4)
 
 ---
 
@@ -50,7 +57,7 @@ These are the Problem Statement / Architecture minimum. **Full PASS** requires a
 | Weekly to gate | `POST /weekly/run` (sample) completes to **PendingApproval** without manual mid-pipeline steps | API / runner test |
 | No auto-publish | Weekly/CI creates **pending** actions only; MCP not called | Mock bridge / receipts absent |
 
-- [ ] Feasibility suite green (`test_eval_feasibility.py`)
+- [x] Feasibility suite green (`test_eval_feasibility.py`)
 - [ ] Manual skim: one sample weekly run → 2 pending actions (`docs_append`, `gmail_draft`)
 
 ### 1.B Correctness of edits
@@ -62,7 +69,7 @@ These are the Problem Statement / Architecture minimum. **Full PASS** requires a
 | Reject isolation | Rejecting one action leaves others untouched; no MCP | Diff + mock bridge call count = 0 |
 | No cascade | Approve Docs ≠ auto Gmail / reply | Explicit separate actions |
 
-- [ ] `test_eval_edits.py` green
+- [x] `test_eval_edits.py` green
 - [ ] Spot-check in UI: edit → approve → reject on three different items
 
 ### 1.C Grounding and compliance
@@ -76,8 +83,8 @@ These are the Problem Statement / Architecture minimum. **Full PASS** requires a
 | PII | PAN / account / phone (rephrased, both loops) refused or redacted | Seeds tagged `pii` |
 | Log scrub | No sensitive tokens in log sinks used by tests after PII cases | `test_eval_grounding.py` assertion |
 
-- [ ] `test_eval_grounding.py` green
-- [ ] Manual claim sample table filled (≥15) — §11
+- [x] `test_eval_grounding.py` green
+- [ ] Manual claim sample table filled (≥15) — §11 (start from `eval_claims_checklist.json`)
 
 ---
 
@@ -141,7 +148,7 @@ Schema (illustrative):
 }
 ```
 
-- [ ] Seeds committed under `support-deck/data/seeds/` (no real PII — synthetic patterns only)
+- [x] Seeds committed under `support-deck/data/seeds/` (no real PII — synthetic patterns only)
 
 ---
 

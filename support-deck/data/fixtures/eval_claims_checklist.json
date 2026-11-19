@@ -1,0 +1,22 @@
+{
+  "description": "Scripted ≥15-claim grounding sample for Support Deck eval (Task 14). Fill ok=true/false during live/manual runs; automated tests only require schema + sources.",
+  "min_claims": 15,
+  "claims": [
+    {"id": 1, "loop": "support", "claim": "Exit load may apply if redeemed within a short window", "source": "https://groww.in/p/exit-load", "ok": null},
+    {"id": 2, "loop": "support", "claim": "Official brokerage charges are documented on Groww", "source": "https://groww.in/p/brokerage-charges", "ok": null},
+    {"id": 3, "loop": "support", "claim": "Mutual fund product facts are on Groww MF pages", "source": "https://groww.in/p/mutual-funds", "ok": null},
+    {"id": 4, "loop": "support", "claim": "KYC requires official identity documents", "source": "https://groww.in/p/exit-load", "ok": null},
+    {"id": 5, "loop": "support", "claim": "Redemption settlement follows scheme timelines", "source": "https://groww.in/p/mutual-funds", "ok": null},
+    {"id": 6, "loop": "support", "claim": "Fee-on-exit questions cite official fee pages", "source": "https://groww.in/p/brokerage-charges", "ok": null},
+    {"id": 7, "loop": "support", "claim": "OOS product names must list searched corpus", "source": "FAQ corpus", "ok": null},
+    {"id": 8, "loop": "support", "claim": "Advice requests are refused without buy/sell guidance", "source": "policy:advice", "ok": null},
+    {"id": 9, "loop": "support", "claim": "Returns/CAGR asks are refused without invented figures", "source": "policy:returns", "ok": null},
+    {"id": 10, "loop": "support", "claim": "PII tokens are redacted before persistence", "source": "pii:redact", "ok": null},
+    {"id": 11, "loop": "product", "claim": "Theme Payments grounded in review sample", "source": "review:s2", "ok": null},
+    {"id": 12, "loop": "product", "claim": "Theme KYC grounded in review sample", "source": "review:s1", "ok": null},
+    {"id": 13, "loop": "product", "claim": "Theme App Stability grounded in review sample", "source": "review:s3", "ok": null},
+    {"id": 14, "loop": "product", "claim": "Theme Investments grounded in review sample", "source": "review:s5", "ok": null},
+    {"id": 15, "loop": "product", "claim": "Theme Support grounded in review sample", "source": "review:s6", "ok": null},
+    {"id": 16, "loop": "product", "claim": "Pulse lookback window stated on weekly artifacts", "source": "window:10w", "ok": null}
+  ]
+}

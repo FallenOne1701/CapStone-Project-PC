@@ -472,13 +472,13 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 2. **Correctness of edits** — edit/approve/reject isolation diffs  
 3. **Grounding/compliance** — sample ≥15 claims; OOS names searched; advice/returns/PII refused or redacted; log scrub assertion  
 
-- [ ] **Step 1: Add seed questions JSONL (≥20) including advice, returns, PII, fee, factual**
+- [x] **Step 1: Add seed questions JSONL (≥20) including advice, returns, PII, fee, factual**
 
-- [ ] **Step 2: Implement automated tests for (1)(2) and a scripted checklist for (3) live claims sampling**
+- [x] **Step 2: Implement automated tests for (1)(2) and a scripted checklist for (3) live claims sampling**
 
-- [ ] **Step 3: Record results template in `eval.md`**
+- [x] **Step 3: Record results template in `eval.md`**
 
-- [ ] **Step 4: Commit** — `support-deck: assembled-system evals`
+- [x] **Step 4: Commit** — `support-deck: assembled-system evals`
 
 ### Task 15: README + root blurb + deploy composition notes
 
