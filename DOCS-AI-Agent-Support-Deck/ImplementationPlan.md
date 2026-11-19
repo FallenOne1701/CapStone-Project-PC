@@ -376,11 +376,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - `match_explainer(question: str) -> FeeExplainer | None`
 - On match: skip parallel draft agents (still may run policy); set `routing_note=reuse_explainer`, `explainer_id=...`, draft ≤3 sentences from bullets
 
-- [ ] **Step 1: Seed explainer; fee-like question → reuse; unrelated question → full desk**
+- [x] **Step 1: Seed explainer; fee-like question → reuse; unrelated question → full desk**
 
-- [ ] **Step 2: Implement and pass**
+- [x] **Step 2: Implement and pass**
 
-- [ ] **Step 3: Commit** — `support-deck: fee explainer reuse in response loop`
+- [x] **Step 3: Commit** — `support-deck: fee explainer reuse in response loop`
 
 ---
 

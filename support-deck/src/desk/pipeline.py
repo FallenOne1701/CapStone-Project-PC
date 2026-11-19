@@ -7,17 +7,55 @@ from pathlib import Path
 
 from src.approval.service import ApprovalService
 from src.config import get_settings
+from src.connectors.explainer_reuse import draft_from_explainer, match_explainer
 from src.connectors.frequency import record_question
 from src.db import connect, init_db
 from src.desk import agents
-from src.desk.orchestrator import orchestrate
+from src.desk import policy_agent
+from src.desk.faq_client import RetrieveResult
+from src.desk.orchestrator import CandidateReply, orchestrate
+from src.desk.policy_agent import PolicyResult
 from src.desk.reviewer import review
-from src.models import ApprovalActionType, QueueItem, QueueStatus
+from src.models import ApprovalActionType, FeeExplainer, QueueItem, QueueStatus
 from src.pii import redact_pii
 
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _explainer_retrieve(explainer: FeeExplainer) -> RetrieveResult:
+    """Synthetic retrieve context so reviewer grounding uses explainer links."""
+    links = list(explainer.links)
+    chunks = [
+        {"text": bullet, "source_url": links[0] if links else ""}
+        for bullet in explainer.bullets
+    ]
+    searched = ["fee_explainer"]
+    if explainer.explainer_id:
+        searched.append(f"explainer:{explainer.explainer_id}")
+    searched.extend(links)
+    return RetrieveResult(chunks=chunks, source_urls=links, searched=searched)
+
+
+def _reuse_explainer_path(
+    question: str, explainer: FeeExplainer
+) -> tuple[PolicyResult, RetrieveResult, CandidateReply]:
+    """Policy-only path: skip parallel retrieve/draft; draft from explainer."""
+    policy = policy_agent.run_policy(question)
+    retrieve = _explainer_retrieve(explainer)
+    if policy.refuse:
+        return policy, retrieve, orchestrate(policy, retrieve, "")
+    draft = draft_from_explainer(explainer)
+    candidate = CandidateReply(
+        status=QueueStatus.drafted,
+        draft=draft,
+        citation_url=explainer.links[0] if explainer.links else None,
+        routing_note="reuse_explainer",
+        searched=list(retrieve.searched),
+        policy_category=policy.category,
+    )
+    return policy, retrieve, candidate
 
 
 def _persist_queue_item(db_path: Path, item: QueueItem) -> None:
@@ -75,10 +113,17 @@ def process_question(
     init_db(path)
 
     safe_text = redact_pii(text or "")
-    policy, retrieve, draft = agents.run_agents_parallel(
-        safe_text, fixture_mode=fixture_mode
-    )
-    candidate = orchestrate(policy, retrieve, draft)
+    matched = match_explainer(safe_text, db_path=path)
+    if matched is not None:
+        _policy, retrieve, candidate = _reuse_explainer_path(safe_text, matched)
+        reused_id = matched.explainer_id
+    else:
+        policy, retrieve, draft = agents.run_agents_parallel(
+            safe_text, fixture_mode=fixture_mode
+        )
+        candidate = orchestrate(policy, retrieve, draft)
+        reused_id = None
+
     reviewed = review(candidate, retrieve)
     final = reviewed.candidate
 
@@ -92,7 +137,7 @@ def process_question(
         routing_note=final.routing_note,
         searched=list(final.searched),
         reviewer_flags=list(reviewed.flags),
-        explainer_id=None,
+        explainer_id=reused_id if final.routing_note == "reuse_explainer" else None,
         created_at=now,
         updated_at=now,
     )
