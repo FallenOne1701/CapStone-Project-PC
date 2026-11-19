@@ -126,3 +126,57 @@ def test_finalize_artifacts_raises_on_pulse_failure(tmp_path):
             ),
             window_bounds=lambda weeks: (date(2026, 1, 1), date(2026, 3, 1)),
         )
+
+
+def test_run_weekly_to_pending_yields_two_pending_actions_zero_mcp(
+    monkeypatch, tmp_path
+):
+    from src.db import init_db
+    from src.models import ApprovalActionType, ApprovalStatus
+    from src.weekly import runner
+
+    end = date(2026, 11, 18)
+    themes, pulse_md = _seed_artifacts(tmp_path, end)
+    pulse_md.write_text("# Pulse\nWeek summary body\n", encoding="utf-8")
+    db = tmp_path / "support_deck.db"
+    init_db(db)
+
+    mcp_calls: list[str] = []
+    fake_mcp = ModuleType("src.mcp_bridge")
+
+    def boom(name):
+        def _inner(*_a, **_k):
+            mcp_calls.append(name)
+            raise AssertionError(f"MCP must not be called: {name}")
+
+        return _inner
+
+    fake_mcp.publish_docs_append = boom("publish_docs_append")
+    fake_mcp.publish_gmail_draft = boom("publish_gmail_draft")
+    monkeypatch.setitem(sys.modules, "src.mcp_bridge", fake_mcp)
+
+    monkeypatch.setattr(
+        runner,
+        "_run_pulse_pipeline",
+        lambda live=False: runner.WeeklyArtifacts(
+            themes_path=themes,
+            pulse_path=pulse_md,
+            window_start=end - timedelta(weeks=10),
+            window_end=end,
+            lookback_weeks=10,
+            live=live,
+        ),
+    )
+
+    result = runner.run_weekly_to_pending(live=False, db_path=db)
+    assert len(result.actions) == 2
+    types = {a.type for a in result.actions}
+    assert types == {
+        ApprovalActionType.docs_append,
+        ApprovalActionType.gmail_draft,
+    }
+    assert all(a.status == ApprovalStatus.pending_approval for a in result.actions)
+    assert all(a.content_hash for a in result.actions)
+    assert all(a.payload_preview for a in result.actions)
+    assert mcp_calls == []
+    assert result.artifacts.pulse_path == pulse_md

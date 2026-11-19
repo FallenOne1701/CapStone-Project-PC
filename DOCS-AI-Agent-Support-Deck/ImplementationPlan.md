@@ -296,11 +296,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - After successful pulse (+ optional explainer), create two `ApprovalAction`s: `docs_append`, `gmail_draft` with `payload_preview` and `content_hash`
 - Status both `pending_approval`
 
-- [ ] **Step 1: Failing test — `run_weekly_to_pending` yields 2 pending actions, 0 MCP calls**
+- [x] **Step 1: Failing test — `run_weekly_to_pending` yields 2 pending actions, 0 MCP calls**
 
-- [ ] **Step 2: Implement; pass**
+- [x] **Step 2: Implement; pass**
 
-- [ ] **Step 3: Commit** — `support-deck: weekly run stops at pending approvals`
+- [x] **Step 3: Commit** — `support-deck: weekly run stops at pending approvals`
 
 ---
 

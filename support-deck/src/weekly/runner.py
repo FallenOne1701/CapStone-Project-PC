@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import json
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
+from src.approval.service import ApprovalService
 from src.config import get_settings
+from src.db import init_db
+from src.models import ApprovalAction, ApprovalActionType
 
 
 @dataclass(frozen=True)
@@ -18,6 +22,20 @@ class WeeklyArtifacts:
     window_end: date
     lookback_weeks: int
     live: bool
+
+
+@dataclass(frozen=True)
+class WeeklyPendingResult:
+    artifacts: WeeklyArtifacts
+    actions: list[ApprovalAction] = field(default_factory=list)
+    explainer_id: str | None = None
+
+
+# Fallback official links when fee confusion is detected but callers pass none.
+_DEFAULT_FEE_SOURCES = (
+    "https://groww.in/p/brokerage-charges",
+    "https://groww.in/p/mutual-funds",
+)
 
 
 @contextmanager
@@ -100,3 +118,86 @@ def run_weekly(live: bool = False) -> WeeklyArtifacts:
     Does not create Docs/Gmail drafts and does not call MCP.
     """
     return _run_pulse_pipeline(live=live)
+
+
+def _maybe_fee_explainer(
+    artifacts: WeeklyArtifacts,
+    *,
+    db_path: Path,
+    fee_sources: list[str] | None = None,
+) -> str | None:
+    """If themes show fee confusion, generate + upsert explainer. Never calls MCP."""
+    from src.weekly.fee_detect import ThemeResult, detect_fee_confusion
+    from src.weekly.fee_explainer import generate_fee_explainer, upsert_explainer
+
+    try:
+        raw = json.loads(artifacts.themes_path.read_text(encoding="utf-8"))
+        themes = ThemeResult.model_validate(raw)
+    except Exception:
+        return None
+    if not detect_fee_confusion(themes):
+        return None
+    sources = list(fee_sources) if fee_sources else list(_DEFAULT_FEE_SOURCES)
+    explainer = generate_fee_explainer(
+        "fee confusion from weekly themes",
+        sources,
+        fixture_mode=True,
+    )
+    saved = upsert_explainer(db_path, explainer)
+    return saved.explainer_id
+
+
+def _create_pending_publish_actions(
+    artifacts: WeeklyArtifacts,
+    *,
+    service: ApprovalService,
+) -> list[ApprovalAction]:
+    settings = get_settings()
+    body = artifacts.pulse_path.read_text(encoding="utf-8")
+    window = f"{artifacts.window_start.isoformat()} → {artifacts.window_end.isoformat()}"
+    doc_id = settings.pulse_doc_id or "(unset PULSE_DOC_ID)"
+    draft_to = settings.pulse_draft_to or "(unset PULSE_DRAFT_TO)"
+
+    docs = service.create_action(
+        action_type=ApprovalActionType.docs_append,
+        payload_preview={
+            "summary": f"Append weekly pulse ({window})",
+            "destinations": [f"doc_id:{doc_id}"],
+            "artifact": str(artifacts.pulse_path),
+        },
+        content=body,
+    )
+    gmail = service.create_action(
+        action_type=ApprovalActionType.gmail_draft,
+        payload_preview={
+            "summary": f"Gmail draft for weekly pulse ({window})",
+            "destinations": [f"to:{draft_to}"],
+            "artifact": str(artifacts.pulse_path),
+        },
+        content=body,
+    )
+    return [docs, gmail]
+
+
+def run_weekly_to_pending(
+    live: bool = False,
+    *,
+    db_path: str | Path | None = None,
+    fee_sources: list[str] | None = None,
+) -> WeeklyPendingResult:
+    """Run weekly pulse, optionally upsert a fee explainer, then create pending
+    Docs + Gmail approval actions. Stops before MCP — never publishes.
+    """
+    artifacts = run_weekly(live=live)
+    path = Path(db_path) if db_path is not None else Path(get_settings().support_deck_db)
+    init_db(path)
+    explainer_id = _maybe_fee_explainer(
+        artifacts, db_path=path, fee_sources=fee_sources
+    )
+    service = ApprovalService(path)
+    actions = _create_pending_publish_actions(artifacts, service=service)
+    return WeeklyPendingResult(
+        artifacts=artifacts,
+        actions=actions,
+        explainer_id=explainer_id,
+    )
