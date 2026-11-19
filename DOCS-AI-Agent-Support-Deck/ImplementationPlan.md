@@ -209,13 +209,13 @@ Run: `cd support-deck && pytest tests/test_db_init.py -v` (create this test file
 **Interfaces:**
 - Produces: `faq_retrieve(question: str) -> RetrieveResult` with `chunks`, `source_urls`, `searched: list[str]`; `faq_classify(question: str) -> str` intent
 
-- [ ] **Step 1: Document import path strategy in `support-deck/README.md` stub** (PYTHONPATH=`backend` + `support-deck`)
+- [x] **Step 1: Document import path strategy in `support-deck/README.md` stub** (PYTHONPATH=`backend` + `support-deck`)
 
-- [ ] **Step 2: Implement `faq_client` wrapping `backend.src.rag.retrieve.retrieve` and `classify`**
+- [x] **Step 2: Implement `faq_client` wrapping `backend.src.rag.retrieve.retrieve` and `classify`**
 
-- [ ] **Step 3: Test with mock or offline index — returns `searched` non-empty list even on empty hits**
+- [x] **Step 3: Test with mock or offline index — returns `searched` non-empty list even on empty hits**
 
-- [ ] **Step 4: Commit** — `support-deck: FAQ retrieve/classify adapter`
+- [x] **Step 4: Commit** — `support-deck: FAQ retrieve/classify adapter`
 
 ### Task 3: Pulse runner wrapper → artifacts only (no MCP)
 
