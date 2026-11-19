@@ -226,13 +226,13 @@ Run: `cd support-deck && pytest tests/test_db_init.py -v` (create this test file
 - Consumes: `pulse` CLI/modules (`run_pulse` sample path)
 - Produces: `run_weekly(live: bool = False) -> WeeklyArtifacts` with paths to `themes.json`, `pulse-*.md`, window meta
 
-- [ ] **Step 1: Write test that with sample mode returns existing theme/pulse artifact paths (tmpdir monkeypatch or call real sample once)**
+- [x] **Step 1: Write test that with sample mode returns existing theme/pulse artifact paths (tmpdir monkeypatch or call real sample once)**
 
-- [ ] **Step 2: Implement wrapper calling pulse sample by default; `live=True` optional**
+- [x] **Step 2: Implement wrapper calling pulse sample by default; `live=True` optional**
 
-- [ ] **Step 3: Assert wrapper never calls MCP**
+- [x] **Step 3: Assert wrapper never calls MCP**
 
-- [ ] **Step 4: Commit** — `support-deck: wrap pulse weekly run into artifacts`
+- [x] **Step 4: Commit** — `support-deck: wrap pulse weekly run into artifacts`
 
 ---
 
