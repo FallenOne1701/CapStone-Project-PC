@@ -87,6 +87,29 @@ def update_queue_draft(db_path: Path, question_id: str, draft: str) -> QueueItem
     return updated
 
 
+def update_queue_status(
+    db_path: Path, question_id: str, status: QueueStatus
+) -> QueueItem | None:
+    """Set queue item status only (used when reply_finalize is decided)."""
+    item = get_queue_item(db_path, question_id)
+    if item is None:
+        return None
+    con = connect(db_path)
+    try:
+        con.execute(
+            """
+            UPDATE queue_items
+            SET status = ?, updated_at = datetime('now')
+            WHERE question_id = ?
+            """,
+            (status.value, question_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+    return get_queue_item(db_path, question_id)
+
+
 def list_approval_actions(db_path: Path) -> list[ApprovalAction]:
     from src.approval.service import ApprovalService
 

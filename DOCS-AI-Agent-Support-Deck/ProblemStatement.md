@@ -1,0 +1,292 @@
+# Problem Statement: Groww Integrated Support + Product Loop (Support Deck)
+
+## Overview
+
+Build a deployed system that runs the support and product loop for one Indian investment platform—**Groww**. Public Play Store reviews become themes and a weekly product pulse. User questions become cited, compliance-checked reply drafts. Nothing is written or sent without a human approving that specific action.
+
+Two teams today solve halves of the same problem and cannot see each other:
+
+- **Support** answers the same fee question dozens of times a month, drafting it fresh each time, sometimes getting it wrong.
+- **Product** sees that “pricing confusion is up” without knowing which fee, or what support has been telling people about it.
+
+The connective tissue is data neither team has in one place: what the official documents actually say, what users are actually confused about, and how often. This track closes that gap by composing Milestone 1 (FAQ RAG), Milestone 2 (review pulse + MCP delivery), and Milestone 3 (multi-agent response desk) into one scheduled, approve-gated product.
+
+**Product focus:** [Groww on Google Play](https://play.google.com/store/apps/details?id=com.nextbillion.groww&hl=en_IN) (`com.nextbillion.groww`) — Stocks, Mutual Fund, IPO consumer app feedback, plus mutual-fund facts from the existing FAQ corpus (official AMC / AMFI / SEBI sources).
+
+This document lives under `DOCS-AI-Agent-Support-Deck/` and is the problem statement for the integrate phase (and the Support Deck / response-desk work that enables it). It does **not** replace `Docs-FAQ/` or `Docs-MCP-&-RAG/`; those remain the track-specific references for M1 and M2.
+
+## Objective
+
+Design and implement a deployed web application that:
+
+1. Fetches recent public Google Play reviews for Groww (live public-data path, with sample/offline fallback), clusters them, and produces a weekly pulse plus a facts-only fee explainer.
+2. Runs a queued response loop: three agents in parallel, orchestrator, and reviewer → reply draft with citation and internal routing note.
+3. Connects the two loops: repeated questions surface in the pulse; fee confusion yields a canonical explainer the response loop reuses.
+4. Enforces facts-only scope and PII rules in code, not only in prompts.
+5. Requires human approve / edit / reject before any Doc append, email draft, or outbound reply leaves the system.
+6. Ships a single interface, evaluations over the assembled whole, and a deployment that can run the weekly loop on a schedule.
+
+## Target Users
+
+| Audience | Why they care |
+|----------|---------------|
+| Support agents | Faster, consistent, cited draft replies; less reinvention |
+| Product / Growth | Themes, quotes, and action ideas grounded in real reviews |
+| Compliance / Ops | Facts-only + human gate; no silent publishes |
+| Leadership | One place to see support load and product signal together |
+
+## What You Bring Forward (Honest Inventory)
+
+### Already in the monorepo
+
+**Milestone 1 — Mutual Fund FAQ Assistant**
+
+- Paths: `frontend/`, `backend/`, `Docs-FAQ/`
+- Cited FAQ corpus over official pages; facts-only refusal
+- Deployed FAQ surfaces (e.g. Vercel + Railway) stay available; integrate by composing, not by throwing them away
+
+**Milestone 2 — Weekly Review Pulse (MCP Docs + Gmail)**
+
+- Paths: `pulse/`, `Docs-MCP-&-RAG/`
+- Live public Play ingest (e.g. `google-play-scraper` via `pulse --live`) into normalized JSONL under `pulse/data/`; ~8–12 week window; PII strip; ≤5 themes with top 3 in prose; ≤250-word pulse; MCP Docs append + Gmail draft
+- Checked-in sample/offline JSONL (e.g. `pulse/data/samples/`) for demos and CI when live fetch is unavailable
+- Weekly CI can generate pulse artifacts; Docs/Gmail remain MCP/operator path until the coded approval gate exists
+
+### Not yet built — still in scope for this phase
+
+- Fee explainer generator (≤6 bullets, facts-only, two official links, last-checked date)
+- Coded human approval gate before Doc append / Gmail draft / outbound reply
+- Three-agent response desk + orchestrator + reviewer
+- Dual-loop connection (repeat questions → pulse; fee confusion → canonical explainer reuse)
+- Unified Support Deck UI (queue, pulse, sources, approval, explainers)
+- Evaluations over the assembled system
+- Single deployment that runs both loops as one product
+
+What's left is building those pieces, wiring M1–M3 as one system, the interface, evals, and deployment.
+
+## End-to-End Flow (“Done”)
+
+### Weekly loop
+
+1. Fetch (or load sample) public Play reviews for Groww in the configured window.
+2. Clean / normalize; strip PII; keep review ids for grounding.
+3. Cluster ≤5 themes; highlight top 3; detect recurring fee/charge confusion.
+4. Write pulse (≤250 words, quotes, 3 action ideas) and fee explainer (≤6 bullets, 2 official links, last-checked).
+5. Human reviews an approval screen listing exactly what will be written and where.
+6. On approve: append pulse (and explainer as specified) via MCP Docs; create Gmail draft via MCP. On reject: nothing is written or sent.
+
+### Response loop
+
+1. Question enters the queue (demo seed or operator input).
+2. Three agents run in parallel; orchestrator merges; reviewer flags issues.
+3. System produces a draft (≤3 sentences), one citation, and a routing note—or an explicit “not covered” with what was searched.
+4. If a canonical fee explainer already covers the ask, reuse it instead of drafting fresh.
+5. Human approves, edits, or rejects that draft only.
+
+### Connection (must be demonstrable)
+
+- Same question appearing ~5+ times in a week surfaces in the weekly pulse.
+- Weekly fee confusion produces/updates a canonical explainer that the response loop reuses.
+
+## Scope of Work
+
+### 1. Review ingest (live-first; no CSV primary path)
+
+**Primary path**
+
+- Fetch recent public Google Play reviews for `com.nextbillion.groww` via the live public-data path already used by `pulse/` (e.g. `google-play-scraper` / `python -m src.run_pulse --live`).
+- Window: roughly the last **8–12 weeks** (configurable within that band).
+- Fields: rating, text/content, date, review id, and related store-normalized metadata. Persist as JSONL or equivalent normalized records (e.g. `pulse/data/raw/play-YYYY-MM-DD.jsonl` → cleaned reviews).
+
+**Fallback**
+
+- Checked-in sample/offline JSONL for local demos, CI, and environments where live Play fetch is blocked or flaky.
+- Do **not** require a hand-maintained raw Play Store CSV as the primary ingest path. A one-off normalized export is acceptable only as an emergency offline substitute that matches the same schema—not as the product design.
+
+**Compliance**
+
+- Public listing / public-data helpers only.
+- No login-gated scraping, no ToS-violating automation, respect rate limits.
+- No reviewer usernames, emails, device IDs, or other PII in any artifact.
+
+### 2. Weekly loop — theming, pulse, fee explainer
+
+**Theming**
+
+- Cluster into at most **5** themes (examples: onboarding, KYC, payments, statements, withdrawals, app performance, customer support, fees/charges—adapt to the data).
+- Written pulse highlights the **top 3** themes.
+- Every theme traces to review ids; every count states the time window.
+
+**Weekly pulse**
+
+- ≤250 words, scannable one-pager.
+- Top themes, verbatim user quotes (no invented wording), three concrete action ideas grounded in those themes.
+- Quotes anonymized / PII-stripped.
+
+**Fee explainer**
+
+- ≤6 bullets, facts-only.
+- Exactly two official source links from the M1 corpus (or other approved official public sources in that corpus policy).
+- Explicit “last checked” date.
+- No recommendations, buy/sell language, or return/performance figures.
+
+**Delivery (after approval)**
+
+- Google Docs append/update via MCP (MCP-first; not bespoke OAuth/REST as the primary path).
+- Gmail draft to self or alias via MCP, containing the note or a clear Doc pointer.
+
+### 3. Response loop — multi-agent support desk
+
+**Queue**
+
+- Incoming user questions with status (pending, drafted, approved, rejected, not covered).
+
+**Agent structure (Milestone 3 core)**
+
+- Three agents run in parallel on each question (roles to be specified in Support Deck architecture / agent design docs—e.g. retrieve, draft, policy check—as long as parallelism + orchestration + review are real).
+- Orchestrator merges agent outputs into one candidate reply.
+- Reviewer produces flags / pass-fail before the draft is shown to a human.
+
+**Outputs per question**
+
+- Reply draft: ≤3 sentences, facts-only.
+- Exactly one citation / source link when answering from corpus.
+- Internal routing note (e.g. escalate, reuse explainer, not covered).
+- Or an explicit “not covered” that names what was searched.
+
+**Human gate**
+
+- Approve, edit, or reject each draft.
+- Edits change only that draft; approve/reject of one item must not trigger unrelated writes.
+
+### 4. Dual-loop connection
+
+This is what neither milestone did alone—and it is mandatory for “done”:
+
+**A. Frequency → pulse**  
+When the response loop sees the same (or clearly equivalent) question on the order of five times in a week, that signal appears in the weekly pulse (theme or callout with count + window).
+
+**B. Fee confusion → canonical explainer**  
+When the weekly loop identifies fee/charge confusion, the fee explainer becomes the canonical answer the response loop reuses instead of drafting from scratch. The UI must show which explainers are active and reused.
+
+Demonstrate both directions with a reproducible demo path (seeded questions + live or sample reviews).
+
+### 5. Scope enforcement (code, not only prompts)
+
+**Facts-only across both loops**
+
+- No investment advice or recommendations.
+- No buy/sell language.
+- No return or performance figures (point to official factsheet/source if asked).
+- When the corpus cannot answer: say so and name what was searched.
+
+**PII**
+
+- Do not store or display PAN, Aadhaar, account numbers, OTPs, emails, phone numbers, reviewer usernames, or device IDs in dataset, UI, logs, or agent state.
+- Inbound messages containing such data: refuse or redact; confirm nothing sensitive reached logs.
+
+**Sources**
+
+- Public official sources only (M1 corpus policy: AMC / AMFI / SEBI-style official pages—not third-party blogs or app back-end screenshots).
+- Every factual claim carries one source link from the Milestone 1 corpus (or explicit not-covered).
+
+### 6. Interface
+
+Minimum surfaces in the deployed web app:
+
+- **Queue view** — questions, draft replies, citations, reviewer flags, status.
+- **Weekly pulse view** — themes, quotes, counts, window.
+- **Sources panel** — where each factual claim came from + last-checked date.
+- **Approval screen** — exact payload and destination (Doc section / Gmail draft / reply) before any write.
+- **Canonical fee explainers** — list of explainers the response loop may reuse, with links and last-checked.
+
+Keep the UI focused on the two loops and the gate; it is not a general analytics dashboard.
+
+### 7. Relationship to existing tracks and deployments
+
+| Track | Role now | Role after integrate |
+|-------|----------|----------------------|
+| FAQ (`Docs-FAQ/`, `frontend/`, `backend/`) | Live facts-only Q&A | Corpus + refusal engine behind response loop; existing hosts updatable in place |
+| Pulse (`Docs-MCP-&-RAG/`, `pulse/`) | Live reviews → pulse + MCP Docs/Gmail | Weekly loop engine + MCP delivery behind approval |
+| Support Deck (this doc + new code area) | Problem statement / integrate home | Unified app, agents, connection, evals, deploy |
+
+Do **not** fold review text into the FAQ Chroma/RAG corpus as unconstrained retrieval fodder. Reviews ground themes and quotes; official docs ground factual claims.
+
+## Constraints (Summary)
+
+### Reviews
+
+- Live public Play path primary; sample JSONL fallback allowed.
+- No CSV-as-primary design; no login-gated scraping.
+
+### Content caps
+
+- Maximum **5** themes; pulse highlights **top 3**.
+- Pulse ≤250 words; explainer ≤6 bullets; reply drafts ≤3 sentences.
+- Quotes verbatim; actions and themes grounded.
+
+### Privacy and compliance
+
+- No PII in artifacts, UI, logs, or agent state.
+- Facts-only; refuse advice / returns / sensitive identifiers.
+
+### Integrations and writes
+
+- Docs + Gmail via **MCP** as the primary Google path.
+- Nothing written or sent without human approval of that specific action.
+
+## Expected Deliverables
+
+### Product
+
+- Deployed web application with queue, pulse, sources, approval, and explainer views.
+- Weekly loop runnable on schedule (or one-click trigger) using live or sample ingest.
+- Response loop with multi-agent draft generation and human approve/edit/reject.
+- Working dual-loop connection (repeat questions ↔ pulse; fee explainer reuse).
+- MCP Doc append + Gmail draft only after approval.
+
+### Documentation (under `DOCS-AI-Agent-Support-Deck/` and linked track docs)
+
+- This problem statement
+- Architecture (agents, loops, approval, data flow)
+- Setup / run / deploy instructions and known limitations
+- Eval plan results for the three assembled-system checks below
+- Notes on how FAQ and pulse hosts were composed (update-in-place vs new app)
+
+## Evaluations (Minimum Three, Over the Assembled System)
+
+### 1. Feasibility
+
+- Every queue question produces a draft or an explicit “not covered”.
+- Every theme carries review ids and a stated window.
+- Pulse stays inside its word cap; explainer inside its bullet cap.
+- Weekly loop completes without manual intervention once triggered (live fetch or sample fallback as configured), up to the human approval step.
+
+### 2. Correctness of edits
+
+- A human edit to a draft changes only that draft.
+- Approving one action does not trigger another.
+- Rejecting a draft leaves the queue otherwise untouched.
+- Diff state before and after each case.
+
+### 3. Grounding and compliance
+
+- Sample fifteen claims across both loops; each traces to a source link or a review id.
+- Questions the corpus cannot answer → system says so and names what it searched.
+- Advice requests, return-figure requests, and messages containing PAN, account number, and phone number—in both loops, rephrased and repeated—are refused or redacted; nothing sensitive reaches the logs.
+
+## Success Criteria
+
+- Live (or documented sample-fallback) Play reviews for Groww ingested in an 8–12 week window without a CSV-primary pipeline.
+- ≤5 themes; pulse top 3 + verbatim quotes + 3 actions; ≤250 words.
+- Fee explainer ≤6 bullets, two official links, last-checked date.
+- Response desk produces cited drafts or explicit not-covered with routing notes.
+- Dual-loop connection demonstrated both ways.
+- Human approval gate blocks Doc/Gmail/outbound until explicitly approved.
+- No PII in UI, artifacts, logs, or agent state.
+- Three eval suites above pass on the assembled system.
+- FAQ and pulse capabilities remain usable; integrate prefers compose / update-in-place over discarding existing deployments.
+
+## Summary
+
+Build one trustworthy Support + Product loop for Groww: live public Play reviews feed a weekly pulse and fee explainer; a multi-agent desk turns questions into cited drafts; the two loops share frequency and fee-confusion signals; MCP Docs and Gmail fire only after a human gate. Carry forward the real M1 FAQ and M2 pulse/MCP work; build the missing desk, explainer, approval, connection, UI, evals, and deployment under this Support Deck integrate phase.

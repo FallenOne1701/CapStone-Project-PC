@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import sys
+import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
 
 from src.config import get_settings
+
+# Backend and Support Deck both use a top-level ``src`` package. Swapping
+# ``sys.modules`` must be exclusive — otherwise parallel FastAPI requests
+# (or policy∥retrieve threads) see ``ModuleNotFoundError: src.api.deps``
+# and the browser reports a generic "Failed to fetch".
+_BACKEND_IMPORT_LOCK = threading.Lock()
 
 
 @dataclass
@@ -19,28 +26,29 @@ class RetrieveResult:
 @contextmanager
 def _backend_import_context() -> Iterator[None]:
     """Prepend BACKEND_ROOT and isolate `src.*` so backend imports do not collide."""
-    backend_root = str(Path(get_settings().backend_root).resolve())
-    stashed = {
-        key: sys.modules.pop(key)
-        for key in list(sys.modules)
-        if key == "src" or key.startswith("src.")
-    }
-    inserted = False
-    if backend_root not in sys.path:
-        sys.path.insert(0, backend_root)
-        inserted = True
-    try:
-        yield
-    finally:
-        for key in list(sys.modules):
-            if key == "src" or key.startswith("src."):
-                sys.modules.pop(key, None)
-        if inserted:
-            try:
-                sys.path.remove(backend_root)
-            except ValueError:
-                pass
-        sys.modules.update(stashed)
+    with _BACKEND_IMPORT_LOCK:
+        backend_root = str(Path(get_settings().backend_root).resolve())
+        stashed = {
+            key: sys.modules.pop(key)
+            for key in list(sys.modules)
+            if key == "src" or key.startswith("src.")
+        }
+        inserted = False
+        if backend_root not in sys.path:
+            sys.path.insert(0, backend_root)
+            inserted = True
+        try:
+            yield
+        finally:
+            for key in list(sys.modules):
+                if key == "src" or key.startswith("src."):
+                    sys.modules.pop(key, None)
+            if inserted:
+                try:
+                    sys.path.remove(backend_root)
+                except ValueError:
+                    pass
+            sys.modules.update(stashed)
 
 
 def _backend_retrieve(

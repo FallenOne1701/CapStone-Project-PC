@@ -163,6 +163,64 @@ def test_approve_isolation_via_api(api_env):
     assert by_id[a2.action_id]["status"] == ApprovalStatus.rejected.value
 
 
+def test_reply_approve_updates_queue_status(api_env, monkeypatch):
+    """Queue is the human gate for replies: approve/reject flips the queue item."""
+    from src.desk import agents, draft_agent
+
+    client = api_env["client"]
+    grounded = _factual_retrieve()
+    monkeypatch.setattr(
+        agents,
+        "run_agents_parallel",
+        lambda q, fixture_mode=None: (
+            PolicyResult(
+                allow=True, refuse=False, reasons=["factual_ok"], category="factual"
+            ),
+            grounded,
+            draft_agent._fixture_draft(q, grounded),
+        ),
+    )
+    created = client.post(
+        f"{PREFIX}/queue", json={"question": "What is the exit load?"}
+    ).json()
+    qid = created["question_id"]
+    assert created["status"] == QueueStatus.drafted.value
+
+    actions = client.get(f"{PREFIX}/approvals").json()
+    reply = next(
+        a
+        for a in actions
+        if a["type"] == ApprovalActionType.reply_finalize.value
+        and a["payload_preview"].get("question_id") == qid
+    )
+
+    approved = client.post(f"{PREFIX}/approvals/{reply['action_id']}/approve")
+    assert approved.status_code == 200
+    assert approved.json()["status"] == ApprovalStatus.approved.value
+
+    item = next(i for i in client.get(f"{PREFIX}/queue").json() if i["question_id"] == qid)
+    assert item["status"] == QueueStatus.approved.value
+
+    # Sibling publish actions stay untouched; a fresh reject path on another item
+    created2 = client.post(
+        f"{PREFIX}/queue", json={"question": "exit load again?"}
+    ).json()
+    qid2 = created2["question_id"]
+    reply2 = next(
+        a
+        for a in client.get(f"{PREFIX}/approvals").json()
+        if a["type"] == ApprovalActionType.reply_finalize.value
+        and a["payload_preview"].get("question_id") == qid2
+        and a["status"] == ApprovalStatus.pending_approval.value
+    )
+    rejected = client.post(f"{PREFIX}/approvals/{reply2['action_id']}/reject")
+    assert rejected.status_code == 200
+    item2 = next(
+        i for i in client.get(f"{PREFIX}/queue").json() if i["question_id"] == qid2
+    )
+    assert item2["status"] == QueueStatus.rejected.value
+
+
 def test_weekly_run_and_pulse_explainers_sources(api_env, monkeypatch):
     from src.approval.service import ApprovalService
     from src.weekly import runner
