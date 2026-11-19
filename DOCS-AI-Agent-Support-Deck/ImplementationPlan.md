@@ -269,7 +269,7 @@ def test_explainer_rejects_bad_shape():
 - Produces: `create_action(...) -> ApprovalAction`; `edit_action(action_id, content) -> ApprovalAction`; `approve(action_id) -> ApprovalAction`; `reject(action_id) -> ApprovalAction`
 - **Invariant:** mutate only the target `action_id`
 
-- [ ] **Step 1: Write isolation tests**
+- [x] **Step 1: Write isolation tests**
 
 ```python
 def test_reject_one_leaves_other_pending(tmp_path):
@@ -280,11 +280,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
     ...
 ```
 
-- [ ] **Step 2: Implement store/service; pass tests**
+- [x] **Step 2: Implement store/service; pass tests**
 
-- [ ] **Step 3: Ensure `approve` does not invoke MCP inside store (bridge is separate)**
+- [x] **Step 3: Ensure `approve` does not invoke MCP inside store (bridge is separate)**
 
-- [ ] **Step 4: Commit** — `support-deck: approval gate store with edit isolation`
+- [x] **Step 4: Commit** — `support-deck: approval gate store with edit isolation`
 
 ### Task 6: Weekly path creates pending Docs + Gmail actions
 
