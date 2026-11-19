@@ -193,11 +193,11 @@ Run: `cd support-deck && pytest tests/test_db_init.py -v` (create this test file
 **Interfaces:**
 - Produces: `contains_pii(text: str) -> bool`; `redact_pii(text: str) -> str` (PAN/phone/email/account-like patterns)
 
-- [ ] **Step 1: Write failing tests** for PAN, phone, email, account-like strings → `contains_pii` True; redacted output has no raw match
+- [x] **Step 1: Write failing tests** for PAN, phone, email, account-like strings → `contains_pii` True; redacted output has no raw match
 
-- [ ] **Step 2: Implement `pii.py` and pass tests**
+- [x] **Step 2: Implement `pii.py` and pass tests**
 
-- [ ] **Step 3: Commit** — `support-deck: add PII detect/redact helpers`
+- [x] **Step 3: Commit** — `support-deck: add PII detect/redact helpers`
 
 ### Task 2: FAQ retrieve/refuse adapter (no Chroma duplication)
 
