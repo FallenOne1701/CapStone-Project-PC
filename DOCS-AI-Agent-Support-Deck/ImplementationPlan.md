@@ -317,11 +317,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - `run_draft(q, retrieve: RetrieveResult) -> str`
 - Pipeline runs the three concurrently (`asyncio.gather` or `ThreadPoolExecutor`)
 
-- [ ] **Step 1: Unit-test policy refuses advice and PII-laden questions without calling draft**
+- [x] **Step 1: Unit-test policy refuses advice and PII-laden questions without calling draft**
 
-- [ ] **Step 2: Implement agents; retrieve must always populate `searched`**
+- [x] **Step 2: Implement agents; retrieve must always populate `searched`**
 
-- [ ] **Step 3: Commit** — `support-deck: parallel retrieve/draft/policy agents`
+- [x] **Step 3: Commit** — `support-deck: parallel retrieve/draft/policy agents`
 
 ### Task 8: Orchestrator + Reviewer + desk pipeline
 
