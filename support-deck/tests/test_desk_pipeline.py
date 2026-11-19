@@ -58,15 +58,21 @@ def test_factual_in_corpus_drafted_with_citation(tmp_path, monkeypatch):
     assert item.draft and "https://groww.in/p/exit-load" in (item.draft or "")
     assert item.routing_note == "answer"
     assert item.searched
+    assert item.agent_package
+    assert item.agent_package["retrieve"]["path"] == "faq"
+    assert "pattern" in item.agent_package["agents_fired"]
+    assert item.agent_package["orchestrator"]["citation_url"] == item.citation_url
 
     # Persisted + reply_finalize pending
     con = connect(db)
     row = con.execute(
-        "SELECT status, citation_url FROM queue_items WHERE question_id = ?",
+        "SELECT status, citation_url, agent_package_json FROM queue_items WHERE question_id = ?",
         (item.question_id,),
     ).fetchone()
     assert row["status"] == "drafted"
     assert row["citation_url"] == "https://groww.in/p/exit-load"
+    stored = json.loads(row["agent_package_json"])
+    assert stored["reviewer"]["passed"] is True
     actions = con.execute(
         "SELECT type, status, payload_preview_json FROM approval_actions"
     ).fetchall()
@@ -142,6 +148,11 @@ def test_advisory_refused_not_answered_as_advice(tmp_path, monkeypatch):
     assert "recommend" not in draft_l
     # Still record searched for audit
     assert item.searched
+    assert item.agent_package
+    assert item.agent_package["policy"]["refuse"] is True
+    assert item.agent_package["policy"]["category"] == "advice"
+    assert "agents_fired" in item.agent_package
+    assert "reviewer" in item.agent_package
 
     con = connect(db)
     n_actions = con.execute("SELECT COUNT(*) AS c FROM approval_actions").fetchone()["c"]

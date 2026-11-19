@@ -24,6 +24,14 @@ def _parse_dt(value: str | None) -> datetime | None:
 
 
 def row_to_queue_item(row) -> QueueItem:
+    keys = row.keys() if hasattr(row, "keys") else []
+    raw_pkg = row["agent_package_json"] if "agent_package_json" in keys else "{}"
+    try:
+        package = json.loads(raw_pkg or "{}")
+    except json.JSONDecodeError:
+        package = {}
+    if not isinstance(package, dict):
+        package = {}
     return QueueItem(
         question_id=row["question_id"],
         question_text=row["question_text"] or "",
@@ -34,6 +42,7 @@ def row_to_queue_item(row) -> QueueItem:
         searched=json.loads(row["searched_json"] or "[]"),
         reviewer_flags=json.loads(row["reviewer_flags_json"] or "[]"),
         explainer_id=row["explainer_id"],
+        agent_package=package,
         created_at=_parse_dt(row["created_at"]),
         updated_at=_parse_dt(row["updated_at"]),
     )

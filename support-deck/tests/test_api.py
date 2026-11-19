@@ -97,6 +97,78 @@ def test_post_queue_drafted_and_not_covered(api_env, monkeypatch):
     assert isinstance(miss["searched"], list) and len(miss["searched"]) > 0
 
 
+def test_enqueue_returns_agent_package(api_env, monkeypatch):
+    from src.desk import agents, draft_agent
+
+    client = api_env["client"]
+    grounded = _factual_retrieve()
+    monkeypatch.setattr(
+        agents,
+        "run_agents_parallel",
+        lambda q, fixture_mode=None: (
+            PolicyResult(
+                allow=True, refuse=False, reasons=["factual_ok"], category="factual"
+            ),
+            grounded,
+            draft_agent._fixture_draft(q, grounded),
+        ),
+    )
+    body = client.post(f"{PREFIX}/queue", json={"question": "What is the exit load?"}).json()
+    pkg = body.get("agent_package") or {}
+    assert pkg.get("retrieve", {}).get("path") == "faq"
+    assert "pattern" in (pkg.get("agents_fired") or [])
+    listed = client.get(f"{PREFIX}/queue").json()
+    match = next(i for i in listed if i["question_id"] == body["question_id"])
+    assert match["agent_package"]["orchestrator"]["citation_url"] == body["citation_url"]
+
+
+def test_patch_draft_does_not_wipe_agent_package(api_env, monkeypatch):
+    from src.db import connect
+    from src.desk import agents, draft_agent
+
+    client = api_env["client"]
+    db = api_env["db"]
+    grounded = _factual_retrieve()
+    monkeypatch.setattr(
+        agents,
+        "run_agents_parallel",
+        lambda q, fixture_mode=None: (
+            PolicyResult(
+                allow=True, refuse=False, reasons=["factual_ok"], category="factual"
+            ),
+            grounded,
+            draft_agent._fixture_draft(q, grounded),
+        ),
+    )
+    created = client.post(f"{PREFIX}/queue", json={"question": "exit load package?"}).json()
+    qid = created["question_id"]
+    original_pkg = created["agent_package"]
+    assert original_pkg
+
+    con = connect(db)
+    before = con.execute(
+        "SELECT agent_package_json FROM queue_items WHERE question_id = ?",
+        (qid,),
+    ).fetchone()["agent_package_json"]
+    con.close()
+
+    patched = client.patch(
+        f"{PREFIX}/queue/{qid}",
+        json={"draft": "edited draft text only"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["draft"] == "edited draft text only"
+    assert patched.json()["agent_package"] == original_pkg
+
+    con = connect(db)
+    after = con.execute(
+        "SELECT agent_package_json FROM queue_items WHERE question_id = ?",
+        (qid,),
+    ).fetchone()["agent_package_json"]
+    con.close()
+    assert after == before
+
+
 def test_patch_queue_edits_draft_only(api_env, monkeypatch):
     from src.desk import agents, draft_agent
 

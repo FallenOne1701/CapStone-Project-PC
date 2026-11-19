@@ -47,7 +47,7 @@ flowchart TB
   subgraph Sources["Sources"]
     Play["Public Play reviews\ncom.nextbillion.groww"]
     Corpus["M1 FAQ corpus\nGroww HDFC scheme pages"]
-    QueueIn["Support questions\nseeded or operator"]
+    QueueIn["Support questions\nseeded or manual input"]
   end
 
   subgraph Weekly["Weekly loop"]
@@ -127,7 +127,7 @@ flowchart TB
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Support Deck UI | Next.js (extend or sibling to `frontend/`) | Matches M1; one operator surface for both loops |
+| Support Deck UI | Next.js (extend or sibling to `frontend/`) | Matches M1; one UI surface for both loops |
 | Support Deck API | FastAPI (extend `backend/` and/or new `support-deck/` package that calls `backend` + `pulse`) | Reuse RAG/refusal; keep Python LLM stack consistent |
 | Review ingest / themes / pulse | Existing `pulse/` (`fetch_play`, clean, theme, write, audit) | Do not reimplement M2; wrap and extend |
 | Fee explainer | New module (LangChain + Groq) calling M1 retrieval/corpus URLs | Facts-only; two links + last-checked enforced by schema |
@@ -301,7 +301,7 @@ Statuses: `pending` → `drafted` → `approved` | `rejected` | `not_covered` (t
 
 ### 9.1 When generated
 
-- Weekly loop detects fee/charge confusion in themes **or** operator triggers regenerate
+- Weekly loop detects fee/charge confusion in themes **or** a human triggers regenerate
 - Stored as a **canonical explainer** versioned by `explainer_id` + `last_checked`
 
 ### 9.2 Contract
@@ -323,7 +323,7 @@ Response loop checks explainer store **before** full parallel draft when the que
 
 ### 10.1 Why coded
 
-M2 today: generate artifacts → operator/MCP runbook. Integrate requires a **system gate**: no MCP tool call or reply finalize without an explicit approve of **that** action.
+M2 today: generate artifacts → MCP/manual runbook. Integrate requires a **system gate**: no MCP tool call or reply finalize without an explicit approve of **that** action.
 
 ### 10.2 Approval unit
 
@@ -346,7 +346,7 @@ M2 today: generate artifacts → operator/MCP runbook. Integrate requires a **sy
 | Edit isolation | Editing one draft/action changes only that record |
 | No cascade | Approving Docs append does **not** auto-create Gmail draft (separate action or explicitly bundled multi-select with two confirmations—default = separate) |
 | Reject | Leaves other queue/actions untouched; no MCP call |
-| Audit | Persist who/when (operator id optional for demo; timestamp required) without storing PII from content beyond the approved artifact |
+| Audit | Persist who/when (actor id optional for demo; timestamp required) without storing PII from content beyond the approved artifact |
 
 ### 10.4 MCP boundary
 
@@ -367,7 +367,7 @@ sequenceDiagram
   Note over API,MCP: Only after approve; never from CI alone
 ```
 
-CI (`pulse-weekly.yml`) may still produce artifacts; **publish remains gated** in the app (or explicit operator approval workflow).
+CI (`pulse-weekly.yml`) may still produce artifacts; **publish remains gated** in the app (or explicit human approval workflow).
 
 ---
 
@@ -383,7 +383,7 @@ Minimum views (problem statement):
 | Approval | Payload + destination list | Approve / reject / edit-then-approve |
 | Explainers | Canonical fee explainers | View; mark active; see reuse count |
 
-Not a general analytics dashboard—operator console for the two loops and the gate.
+Not a general analytics dashboard—UI focused on the two loops and the human gate.
 
 ---
 
@@ -423,7 +423,7 @@ Fail closed: do not enqueue a “successful” answer that fails these checks.
 | FAQ UI | Vercel `frontend/` | Add Support Deck routes **or** deploy composed UI; update-in-place preferred |
 | FAQ API | Railway `backend/` | Expose retrieve/refuse to desk; keep `/api/ask` working |
 | Pulse | Local/CI `pulse/` | Called by Support Deck API or scheduled job; artifacts land in shared out/ |
-| MCP | Operator / Cursor MCP | Invoked by gated server-side or documented operator bridge after approve |
+| MCP | Cursor MCP / runbook | Invoked by gated server-side or documented MCP bridge after approve |
 | Support Deck | — | New deployable surface binding the above |
 
 **Non-goal:** Destroy existing FAQ deployments. Prefer compose and update-in-place.
@@ -457,7 +457,7 @@ Eval harness lives under `support-deck/` (or `DOCS-AI-Agent-Support-Deck/eval` r
 
 1. Trigger weekly job (API or CI) → `pulse` live/sample → themes + pulse (+ fee explainer).
 2. Auditors pass → create `PendingApproval` actions for Docs + Gmail.
-3. Operator opens Approval view → approves Docs (and separately Gmail, unless explicitly bundled).
+3. On the Approvals view, a human approves Docs (and separately Gmail, unless explicitly bundled).
 4. API calls MCP tools once per approved action.
 5. Frequency signals from the queue are merged into the next pulse inputs.
 

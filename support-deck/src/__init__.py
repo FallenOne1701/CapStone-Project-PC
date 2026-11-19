@@ -1,1 +1,1 @@
-"""Groww Support Deck — dual-loop support + product operator package."""
+"""Groww Support Deck — dual-loop support + product package."""

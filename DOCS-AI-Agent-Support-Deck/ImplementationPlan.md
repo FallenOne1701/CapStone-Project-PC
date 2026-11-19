@@ -4,7 +4,7 @@
 
 **Goal:** Build a deployed Support Deck that runs Groww’s weekly product loop (live Play reviews → pulse + fee explainer) and support response loop (multi-agent cited drafts) behind a coded human approval gate, with dual-loop connectors and assembled-system evals.
 
-**Architecture:** New `support-deck/` Python package composes existing `pulse/` (live/sample ingest → themes → pulse) and `backend/` (retrieve + classify + refuse). Adds fee explainer, SQLite-backed queue/approvals, Retrieve/Draft/Policy agents + orchestrator + reviewer, frequency→pulse and fee→explainer connectors, FastAPI surface, and Next.js operator views. MCP Docs/Gmail (`google_docs_append_content`, `gmail_create_draft`) run **only after** approve. Do not index reviews into Chroma; do not make CSV the primary ingest path.
+**Architecture:** New `support-deck/` Python package composes existing `pulse/` (live/sample ingest → themes → pulse) and `backend/` (retrieve + classify + refuse). Adds fee explainer, SQLite-backed queue/approvals, Retrieve/Draft/Policy agents + orchestrator + reviewer, frequency→pulse and fee→explainer connectors, FastAPI surface, and Next.js Support Deck views. MCP Docs/Gmail (`google_docs_append_content`, `gmail_create_draft`) run **only after** approve. Do not index reviews into Chroma; do not make CSV the primary ingest path.
 
 **Tech Stack:** Python 3.11+, FastAPI, SQLite (v1), LangChain + `langchain-groq`, pydantic, pytest; reuse `pulse/` + `backend/` RAG; Next.js (extend `frontend/`); MCP-Server-1 for Docs/Gmail
 
@@ -411,7 +411,7 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 
 - [x] **Step 2: Implement routers; wire CORS for local frontend**
 
-- [x] **Step 3: Commit** — `support-deck: FastAPI operator API`
+- [x] **Step 3: Commit** — `support-deck: FastAPI Support Deck API`
 
 ### Task 12: Next.js Support Deck views
 
@@ -433,7 +433,7 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 
 - [x] **Step 6: Manual smoke on localhost (FAQ `/` still works)**
 
-- [x] **Step 7: Commit** — `frontend: Support Deck operator UI`
+- [x] **Step 7: Commit** — `frontend: Support Deck UI`
 
 ---
 
@@ -453,7 +453,7 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 
 - [x] **Step 1: Isolation test with mock**
 
-- [x] **Step 2: Implement dry-run bridge + document live Cursor/MCP operator steps in `mcp-runbook.md` (reuse MCP-Server-1 tool names)**
+- [x] **Step 2: Implement dry-run bridge + document live Cursor/MCP steps in `mcp-runbook.md` (reuse MCP-Server-1 tool names)**
 
 - [x] **Step 3: Commit** — `support-deck: gated MCP bridge + runbook`
 

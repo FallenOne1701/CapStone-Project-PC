@@ -1,6 +1,6 @@
 # MCP runbook — Groww weekly pulse → Docs + Gmail draft
 
-Operator checklist to publish a validated pulse artifact via **[MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1)** (Google Workspace MCP).
+Checklist to publish a validated pulse artifact via **[MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1)** (Google Workspace MCP).
 
 This path does **not** use `google-api-python-client`, LangChain Google toolkits, or custom Google OAuth in `pulse/`. Success for v1 is **Doc append + Gmail draft** — do **not** call `gmail_send_email` unless a human explicitly wants to send.
 
@@ -77,7 +77,7 @@ Also set in `pulse/.env.example` as placeholders (no real secrets).
 | `PULSE_DRAFT_TO` | `pulse/.env` |
 | Date label | `YYYY-MM-DD` from the pulse filename / title |
 
-Optional: `pulse/out/themes.json` for operator context — not required by MCP tools.
+Optional: `pulse/out/themes.json` for run context — not required by MCP tools.
 
 ---
 
@@ -131,7 +131,7 @@ Optional: `pulse/out/themes.json` for operator context — not required by MCP t
 - No `google-api-python-client` (or equivalent) inside `pulse/` for this delivery path  
 - No LangChain Google toolkits as the primary Docs/Gmail path  
 - No auto-send (`gmail_send_email` unused for v1)  
-- No Doc **create** via MCP — operator creates the Doc once  
+- No Doc **create** via MCP — create the Doc once manually  
 
 ---
 

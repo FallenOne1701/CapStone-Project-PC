@@ -1,6 +1,6 @@
 # MCP runbook — Support Deck gated Docs + Gmail
 
-Operator checklist to publish an **approved** Support Deck action via **[MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1)** (Google Workspace MCP).
+Checklist to publish an **approved** Support Deck action via **[MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1)** (Google Workspace MCP).
 
 Nothing is written or drafted until a human approves **that** `docs_append` or `gmail_draft` action. Reject never calls MCP. Reply finalize is a separate queue gate and does **not** use these tools.
 
@@ -26,7 +26,7 @@ Sibling (pulse-only) checklist: [`Docs-MCP-&-RAG/mcp-runbook.md`](../Docs-MCP-&-
 |------|-----|----------|
 | **Dry-run (default)** | `MCP_LIVE` unset/`0` | `ApprovalService.approve` → `mcp_bridge` writes a JSON receipt under `support-deck/data/fixtures/mcp-receipts/` with the exact tool name + arguments. No Google call. |
 | **Live HTTP** | `MCP_LIVE=1` plus `MCP_URL` + `MCP_API_KEY` | Bridge calls MCP-Server-1 `tools/call` over HTTP (same shape as `pulse/scripts/dry_run_mcp_delivery.py`). Fails closed if `PULSE_DOC_ID` / `PULSE_DRAFT_TO` missing. |
-| **Cursor chat tools** | Operator / agent in Cursor with MCP registered | After approve (or instead of HTTP live), call the two tools below with the receipt/`payload_preview` values. |
+| **Cursor chat tools** | Human / agent in Cursor with MCP registered | After approve (or instead of HTTP live), call the two tools below with the receipt/`payload_preview` values. |
 
 ---
 
@@ -126,7 +126,7 @@ Only after the matching action is **approved** (or when intentionally replaying 
 - No `google-api-python-client` inside `support-deck/` as the primary path  
 - No LangChain Google toolkits as primary Docs/Gmail  
 - No auto-send (`gmail_send_email` unused for v1)  
-- No Doc **create** via MCP — operator creates the Doc once  
+- No Doc **create** via MCP — create the Doc once manually  
 - No publish on reject, and no Docs/Gmail tools for `reply_finalize`
 
 ---

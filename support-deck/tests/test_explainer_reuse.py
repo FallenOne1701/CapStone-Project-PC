@@ -95,6 +95,10 @@ def test_fee_question_reuses_explainer_skips_parallel_agents(tmp_path, monkeypat
     assert item.status == QueueStatus.drafted
     assert item.citation_url in seeded.links
     assert item.draft
+    assert item.agent_package
+    assert item.agent_package["retrieve"]["path"] == "reuse_explainer"
+    assert "draft" not in item.agent_package["agents_fired"]
+    assert (item.agent_package.get("draft") or {}).get("text")
     from src.desk.reviewer import _sentence_count
 
     assert _sentence_count(item.draft) <= 3

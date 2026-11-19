@@ -37,6 +37,7 @@ class QueueItem(BaseModel):
     searched: list[str] = Field(default_factory=list)
     reviewer_flags: list[str] = Field(default_factory=list)
     explainer_id: str | None = None
+    agent_package: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

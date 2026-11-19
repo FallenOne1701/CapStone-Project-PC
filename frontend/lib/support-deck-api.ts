@@ -16,6 +16,38 @@ export type ApprovalActionType =
   | "gmail_draft"
   | "reply_finalize";
 
+export interface AgentPackage {
+  retrieve?: {
+    path?: string;
+    chunk_count?: number;
+    source_urls?: string[];
+    searched?: string[];
+  };
+  draft?: { text?: string; word_count?: number };
+  policy?: {
+    refuse?: boolean;
+    allow?: boolean;
+    category?: string;
+    reasons?: string[];
+  };
+  pattern?: {
+    normalized_text?: string;
+    count?: number;
+    window_days?: number;
+    threshold?: number;
+    recurring?: boolean;
+    window_start?: string | null;
+    window_end?: string | null;
+  };
+  orchestrator?: {
+    routing_note?: string | null;
+    status?: string;
+    citation_url?: string | null;
+  };
+  reviewer?: { passed?: boolean; flags?: string[]; round?: number };
+  agents_fired?: string[];
+}
+
 export interface QueueItem {
   question_id: string;
   question_text: string;
@@ -26,6 +58,7 @@ export interface QueueItem {
   searched: string[];
   reviewer_flags: string[];
   explainer_id: string | null;
+  agent_package?: AgentPackage | null;
   created_at: string | null;
   updated_at: string | null;
 }

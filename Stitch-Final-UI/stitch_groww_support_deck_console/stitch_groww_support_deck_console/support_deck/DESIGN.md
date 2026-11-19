@@ -125,7 +125,7 @@ spacing:
 
 ## Brand & Style
 
-This design system establishes an operator-first visual language tailored for fintech back-office operations, high-velocity drafting, and audit-ready review workflows. The interface is engineered for continuous daily usage by support executives, dispute handlers, and product managers reviewing automated fee explainers and reply drafts.
+This design system establishes a visual language for the Support Deck dual loops (response + weekly product), high-velocity drafting, and audit-ready human review. The interface supports support agents, product/growth, compliance/ops, and leadership reviewing fee explainers and reply drafts—aligned with the problem statement audience, not an “operator console” brand.
 
 ### Aesthetic Paradigm
 - **Direction:** Corporate Modern with dense data pragmatism and Swiss utility. 
@@ -213,7 +213,7 @@ The design system maintains a balanced, professional geometry (`roundedness: 2`)
 
 ### Header & Navigation
 - **Height & Frame:** Sticky `56px` height, `#FFFFFF` background, bottom border `1px solid #E2E8F0`.
-- **Title Block:** `Support Deck` rendered in `headline-sm` font-bold text `#0F172A`, paired with an inline separator and muted subtitle `Operator console · dual loops + approval gate` in `body-sm` `#64748B`.
+- **Title Block:** `Support Deck` rendered in `headline-sm` font-bold text `#0F172A`, paired with an inline separator and muted subtitle `Dual loops · human approval gate` in `body-sm` `#64748B`.
 - **Navigation Tabs:** Horizontal pill tabs with `space-xs` padding.
   - *Inactive:* Transparent background, text `#475569`, hover `#F1F5F9`.
   - *Active:* Background `#E6F4F1`, text `#095341`, font weight `600`, border `1px solid #C8EAE2`.

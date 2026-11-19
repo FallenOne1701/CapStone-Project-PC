@@ -1,4 +1,4 @@
-"""Support Deck FastAPI operator surface."""
+"""Support Deck FastAPI surface."""
 
 from src.api.app import create_app
 

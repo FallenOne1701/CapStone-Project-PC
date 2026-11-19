@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AgentPackagePanels } from "@/components/support-deck/AgentPackagePanels";
 import { DeckAlert } from "@/components/support-deck/DeckAlert";
 import { MaterialIcon } from "@/components/support-deck/MaterialIcon";
 import { StatusBadge } from "@/components/support-deck/StatusBadge";
@@ -219,7 +220,7 @@ export default function QueuePage() {
             className="flex h-10 flex-shrink-0 items-center gap-1.5 rounded-lg bg-primary px-space-xl font-label-md text-label-md font-medium text-on-primary shadow-sm transition-all hover:bg-tertiary disabled:opacity-50"
           >
             <MaterialIcon name="send" className="text-[17px]" />
-            Enqueue
+            {busy ? "Running Retrieve · Draft · Policy…" : "Enqueue"}
           </button>
         </form>
       </div>
@@ -309,11 +310,23 @@ export default function QueuePage() {
                   <p className="mb-1.5 line-clamp-2 font-body-md text-body-md font-semibold leading-snug text-on-surface">
                     {item.question_text || item.question_id}
                   </p>
-                  {item.routing_note && (
-                    <p className="font-code-sm text-code-sm text-on-surface-variant">
-                      route: {item.routing_note}
-                    </p>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {item.routing_note && (
+                      <p className="font-code-sm text-code-sm text-on-surface-variant">
+                        route: {item.routing_note}
+                      </p>
+                    )}
+                    {item.agent_package?.pattern?.recurring && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-label-sm text-label-sm font-semibold text-amber-900">
+                        recurring
+                      </span>
+                    )}
+                    {item.agent_package?.reviewer?.passed === false && (
+                      <span className="rounded bg-error-container px-1.5 py-0.5 font-label-sm text-label-sm font-semibold text-on-error-container">
+                        reviewer fail
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -351,6 +364,9 @@ export default function QueuePage() {
                   </span>
                   <p className="font-headline-sm text-headline-sm font-semibold leading-snug text-on-surface">
                     “{selected.question_text}”
+                  </p>
+                  <p className="mt-1 font-label-sm text-label-sm text-on-surface-variant">
+                    PII redacted at ingress before agents run.
                   </p>
                 </div>
               </div>
@@ -404,6 +420,8 @@ export default function QueuePage() {
                   </button>
                 </div>
               </div>
+
+              <AgentPackagePanels pkg={selected.agent_package} />
 
               <div className="flex flex-col gap-space-sm bg-surface-container-low px-space-lg py-space-md">
                 <span className="font-label-sm text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">

@@ -1,6 +1,6 @@
 # Support Deck
 
-Operator package for Groww’s dual support + product loops (see `DOCS-AI-Agent-Support-Deck/`).
+Groww Support Deck package for the dual support + product loops (see `DOCS-AI-Agent-Support-Deck/`).
 
 ## Import path strategy (FAQ adapter)
 

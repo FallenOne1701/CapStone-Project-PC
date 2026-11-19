@@ -120,7 +120,7 @@ export default function ApprovalsPage() {
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-space-md">
                 <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
                   {pendingCount} pending action
-                  {pendingCount === 1 ? "" : "s"} require operator clearance
+                  {pendingCount === 1 ? "" : "s"} require human clearance
                 </span>
               </div>
             </div>

@@ -4,7 +4,7 @@
 
 **Goal:** Build an on-demand weekly review-pulse pipeline for the Groww Play app that imports ~8–12 weeks of public reviews, clusters ≤5 themes, writes a ≤250-word note (top 3 themes, 3 verbatim quotes, 3 actions), then delivers via Google Docs + Gmail draft using MCP.
 
-**Architecture:** Separate `pulse/` Python package beside the FAQ stack. Public Play fetch → PII strip → LangChain (Groq) theme + pulse chains → deterministic auditor → `pulse/out/` artifacts. Operator/agent publishes with Docs/Gmail MCP (no custom Google OAuth/REST; no LangChain Google toolkits; no scheduler in v1). FAQ `frontend/` + `backend/` and Vercel/Railway stay untouched until a later combined-demo merge.
+**Architecture:** Separate `pulse/` Python package beside the FAQ stack. Public Play fetch → PII strip → LangChain (Groq) theme + pulse chains → deterministic auditor → `pulse/out/` artifacts. Human/agent publishes with Docs/Gmail MCP (no custom Google OAuth/REST; no LangChain Google toolkits; no scheduler in v1). FAQ `frontend/` + `backend/` and Vercel/Railway stay untouched until a later combined-demo merge.
 
 **Tech Stack:** Python 3.11+, `google-play-scraper`, pydantic, python-dotenv, LangChain + `langchain-groq`, pytest, Groq chat model; MCP Docs + Gmail (environment tools)
 
@@ -1259,7 +1259,7 @@ git commit -m "feat(pulse): CLI run_pulse sample and live paths"
 
 **Interfaces:**
 - Consumes: `pulse/out/pulse-YYYY-MM-DD.md`, env `PULSE_DRAFT_TO`
-- Produces: operator checklist that creates/updates a Google Doc and a Gmail draft via MCP tools available in the environment (tool names filled at runtime)
+- Produces: checklist that creates/updates a Google Doc and a Gmail draft via MCP tools available in the environment (tool names filled at runtime)
 
 - [ ] **Step 1: Write `Docs-MCP-&-RAG/mcp-runbook.md`**
 

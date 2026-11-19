@@ -11,7 +11,7 @@ Corner scenarios for the pulse track, derived from `implementation-plan.md` and 
 | **Block** | Must stop; do not write `out/` publish artifacts / do not MCP-publish |
 | **Hard fail** | Auditor or validator rejects; CLI non-zero (or regenerate once then stop) |
 | **Soft / harden** | Prefer fix in code or prompt; document if accepted |
-| **Ops** | Operator / MCP setup issue, not batch-code logic |
+| **Ops** | Env / MCP setup issue, not batch-code logic |
 
 ---
 
@@ -110,7 +110,7 @@ Corner scenarios for the pulse track, derived from `implementation-plan.md` and 
 | A1 | First audit fail | One constrained regenerate (architecture); re-audit | Soft / harden |
 | A2 | Second audit fail | Stop; print errors; **do not** write successful pulse as publish-ready / do not MCP | Block |
 | A3 | Themes.json has ≤5 but pulse lists ≠3 themes | Audit fails on prose theme count | Hard fail |
-| A4 | Audit passes locally but operator pastes wrong file to MCP | Runbook: only use latest audited `pulse/out/pulse-*.md` | Ops |
+| A4 | Audit passes locally but the wrong file is pasted into MCP | Runbook: only use latest audited `pulse/out/pulse-*.md` | Ops |
 | A5 | CLI writes nothing on audit fail | Plan exit 2 before write — keep that (no bad `out/pulse-*.md`) | Block |
 
 ---
@@ -126,7 +126,7 @@ Corner scenarios for the pulse track, derived from `implementation-plan.md` and 
 | M5 | Empty `content` append | Validation error; never append empty pulse | Hard fail |
 | M6 | Concurrent edit / stale revision on Doc | MCP may return Google API / revision error; retry once or re-read runbook | Ops |
 | M7 | Re-running same week appends duplicate pulse | Prefix dated heading; accept duplicate or use a fresh Doc / clear section manually | Soft / harden |
-| M8 | Operator calls `gmail_send_email` | Out of v1 success path; draft-only for eval | Soft / harden |
+| M8 | Someone calls `gmail_send_email` | Out of v1 success path; draft-only for eval | Soft / harden |
 | M9 | Invalid `PULSE_DRAFT_TO` email | MCP validation error; fix recipient | Ops |
 | M10 | Draft created but Doc append failed (or reverse) | Partial delivery — retry failed step only; record both ids in runbook checklist | Ops |
 | M11 | Publishing failed audit pulse | Forbidden — runbook prerequisite: audit passed / CLI exit 0 | Block |
@@ -185,4 +185,4 @@ Do **not** MCP-publish when any of these hold:
 4. `PULSE_DOC_ID` / `PULSE_DRAFT_TO` / MCP auth missing  
 5. Delivery would require non-MCP Google clients in `pulse/`
 
-Offline success (`pulse/out/*` + audit OK) can still stand without Docs/Gmail if MCP is down — delivery is a separate operator step per the runbook.
+Offline success (`pulse/out/*` + audit OK) can still stand without Docs/Gmail if MCP is down — delivery is a separate manual step per the runbook.

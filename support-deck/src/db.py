@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS queue_items (
     searched_json TEXT NOT NULL DEFAULT '[]',
     reviewer_flags_json TEXT NOT NULL DEFAULT '[]',
     explainer_id TEXT,
+    agent_package_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -67,12 +68,21 @@ def connect(path: str | Path) -> sqlite3.Connection:
     return con
 
 
+def ensure_agent_package_column(con: sqlite3.Connection) -> None:
+    cols = {r[1] for r in con.execute("PRAGMA table_info(queue_items)")}
+    if "agent_package_json" not in cols:
+        con.execute(
+            "ALTER TABLE queue_items ADD COLUMN agent_package_json TEXT NOT NULL DEFAULT '{}'"
+        )
+
+
 def init_db(path: str | Path) -> None:
     db_path = Path(path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     con = connect(db_path)
     try:
         con.executescript(SCHEMA_SQL)
+        ensure_agent_package_column(con)
         con.commit()
     finally:
         con.close()

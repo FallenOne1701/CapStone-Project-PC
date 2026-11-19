@@ -4,6 +4,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from src.approval.service import ApprovalService
 from src.config import get_settings
@@ -12,6 +13,7 @@ from src.connectors.frequency import record_question
 from src.db import connect, init_db
 from src.desk import agents
 from src.desk import policy_agent
+from src.desk.agent_package import build_agent_package
 from src.desk.faq_client import RetrieveResult
 from src.desk.orchestrator import CandidateReply, orchestrate
 from src.desk.policy_agent import PolicyResult
@@ -66,8 +68,8 @@ def _persist_queue_item(db_path: Path, item: QueueItem) -> None:
             INSERT INTO queue_items (
                 question_id, question_text, status, draft, citation_url,
                 routing_note, searched_json, reviewer_flags_json, explainer_id,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                agent_package_json, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(question_id) DO UPDATE SET
                 question_text = excluded.question_text,
                 status = excluded.status,
@@ -77,6 +79,7 @@ def _persist_queue_item(db_path: Path, item: QueueItem) -> None:
                 searched_json = excluded.searched_json,
                 reviewer_flags_json = excluded.reviewer_flags_json,
                 explainer_id = excluded.explainer_id,
+                agent_package_json = excluded.agent_package_json,
                 updated_at = excluded.updated_at
             """,
             (
@@ -89,6 +92,7 @@ def _persist_queue_item(db_path: Path, item: QueueItem) -> None:
                 json.dumps(item.searched),
                 json.dumps(item.reviewer_flags),
                 item.explainer_id,
+                json.dumps(item.agent_package or {}),
                 (item.created_at or _utcnow()).isoformat(sep=" "),
                 (item.updated_at or _utcnow()).isoformat(sep=" "),
             ),
@@ -114,20 +118,43 @@ def process_question(
 
     safe_text = redact_pii(text or "")
     matched = match_explainer(safe_text, db_path=path)
+    retrieve_path: Literal["faq", "reuse_explainer"]
     if matched is not None:
-        _policy, retrieve, candidate = _reuse_explainer_path(safe_text, matched)
+        policy, retrieve, candidate = _reuse_explainer_path(safe_text, matched)
         reused_id = matched.explainer_id
+        retrieve_path = "reuse_explainer"
+        agents_fired_base = ["policy", "retrieve", "orchestrator", "reviewer"]
     else:
         policy, retrieve, draft = agents.run_agents_parallel(
             safe_text, fixture_mode=fixture_mode
         )
         candidate = orchestrate(policy, retrieve, draft)
         reused_id = None
+        retrieve_path = "faq"
+        agents_fired_base = [
+            "retrieve",
+            "draft",
+            "policy",
+            "orchestrator",
+            "reviewer",
+        ]
 
     reviewed = review(candidate, retrieve)
     final = reviewed.candidate
 
     now = _utcnow()
+    bucket = record_question(safe_text, at=now, db_path=path)
+    package = build_agent_package(
+        retrieve=retrieve,
+        policy=policy,
+        reviewed=reviewed,
+        bucket=bucket,
+        retrieve_path=retrieve_path,
+        agents_fired_base=agents_fired_base,
+        frequency_threshold=int(settings.frequency_threshold),
+        window_days=7,
+    )
+
     item = QueueItem(
         question_id=f"q-{uuid.uuid4().hex[:12]}",
         question_text=safe_text,
@@ -138,11 +165,11 @@ def process_question(
         searched=list(final.searched),
         reviewer_flags=list(reviewed.flags),
         explainer_id=reused_id if final.routing_note == "reuse_explainer" else None,
+        agent_package=package,
         created_at=now,
         updated_at=now,
     )
     _persist_queue_item(path, item)
-    record_question(safe_text, at=now, db_path=path)
 
     if item.status == QueueStatus.drafted:
         service = ApprovalService(path)

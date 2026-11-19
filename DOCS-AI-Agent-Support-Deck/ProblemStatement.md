@@ -50,7 +50,7 @@ Design and implement a deployed web application that:
 - Paths: `pulse/`, `Docs-MCP-&-RAG/`
 - Live public Play ingest (e.g. `google-play-scraper` via `pulse --live`) into normalized JSONL under `pulse/data/`; ~8–12 week window; PII strip; ≤5 themes with top 3 in prose; ≤250-word pulse; MCP Docs append + Gmail draft
 - Checked-in sample/offline JSONL (e.g. `pulse/data/samples/`) for demos and CI when live fetch is unavailable
-- Weekly CI can generate pulse artifacts; Docs/Gmail remain MCP/operator path until the coded approval gate exists
+- Weekly CI can generate pulse artifacts; Docs/Gmail remain MCP/manual path until the coded approval gate exists
 
 ### Not yet built — still in scope for this phase
 
@@ -77,7 +77,7 @@ What's left is building those pieces, wiring M1–M3 as one system, the interfac
 
 ### Response loop
 
-1. Question enters the queue (demo seed or operator input).
+1. Question enters the queue (demo seed or manual input).
 2. Three agents run in parallel; orchestrator merges; reviewer flags issues.
 3. System produces a draft (≤3 sentences), one citation, and a routing note—or an explicit “not covered” with what was searched.
 4. If a canonical fee explainer already covers the ask, reuse it instead of drafting fresh.
