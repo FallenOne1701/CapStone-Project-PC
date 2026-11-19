@@ -488,11 +488,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 
 **Content:** setup (venv, env, run API + frontend), sample vs live weekly, approval + MCP dry-run vs live, known limitations (MCP doc-create gap, Play fetch flakiness), compose-not-replace FAQ hosts
 
-- [ ] **Step 1: Write READMEs**
+- [x] **Step 1: Write READMEs**
 
-- [ ] **Step 2: Sanity — FAQ `/api/ask` still healthy; Support Deck sample weekly + one queue item end-to-end dry-run**
+- [x] **Step 2: Sanity — FAQ `/api/ask` still healthy; Support Deck sample weekly + one queue item end-to-end dry-run**
 
-- [ ] **Step 3: Commit** — `docs: Support Deck README and root track blurb`
+- [x] **Step 3: Commit** — `docs: Support Deck README and root track blurb`
 
 ---
 
