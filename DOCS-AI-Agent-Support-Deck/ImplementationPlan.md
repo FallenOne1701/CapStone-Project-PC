@@ -451,11 +451,11 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - `publish_gmail_draft(action: ApprovalAction) -> None`
 - Default local mode: write dry-run receipt under `support-deck/data/fixtures/mcp-receipts/` unless `MCP_LIVE=1`
 
-- [ ] **Step 1: Isolation test with mock**
+- [x] **Step 1: Isolation test with mock**
 
-- [ ] **Step 2: Implement dry-run bridge + document live Cursor/MCP operator steps in `mcp-runbook.md` (reuse MCP-Server-1 tool names)**
+- [x] **Step 2: Implement dry-run bridge + document live Cursor/MCP operator steps in `mcp-runbook.md` (reuse MCP-Server-1 tool names)**
 
-- [ ] **Step 3: Commit** — `support-deck: gated MCP bridge + runbook`
+- [x] **Step 3: Commit** — `support-deck: gated MCP bridge + runbook`
 
 ---
 

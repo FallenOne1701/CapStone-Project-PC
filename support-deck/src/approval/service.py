@@ -6,8 +6,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src import mcp_bridge
 from src.approval.store import ApprovalStore
-from src.models import ApprovalAction, ApprovalActionType, ApprovalStatus
+from src.models import ApprovalAction, ApprovalActionType, ApprovalStatus, QueueStatus
 
 
 def content_hash(content: str) -> str:
@@ -15,10 +16,16 @@ def content_hash(content: str) -> str:
 
 
 class ApprovalService:
-    """Approval gate API. ``approve`` marks status only — never calls MCP."""
+    """Approval gate API.
+
+    ``approve`` marks status, then for ``docs_append`` / ``gmail_draft`` only
+    invokes ``mcp_bridge`` (dry-run receipts by default). Reject and
+    ``reply_finalize`` never call the bridge.
+    """
 
     def __init__(self, db_path: str | Path) -> None:
-        self.store = ApprovalStore(db_path)
+        self.db_path = Path(db_path)
+        self.store = ApprovalStore(self.db_path)
 
     def create_action(
         self,
@@ -29,10 +36,13 @@ class ApprovalService:
         action_id: str | None = None,
     ) -> ApprovalAction:
         aid = action_id or f"act-{uuid.uuid4().hex[:12]}"
+        # Persist body for gated publish (DB stores hash + optional edits only).
+        preview = dict(payload_preview)
+        preview.setdefault("_publish_body", content)
         action = ApprovalAction(
             action_id=aid,
             type=action_type,
-            payload_preview=payload_preview,
+            payload_preview=preview,
             content_hash=content_hash(content),
             status=ApprovalStatus.pending_approval,
             edited_content=None,
@@ -53,23 +63,48 @@ class ApprovalService:
             content_hash=content_hash(content),
         )
 
+    def _sync_queue_for_reply(
+        self, action: ApprovalAction, *, status: QueueStatus
+    ) -> None:
+        """When a reply_finalize is decided, mirror that onto the Queue item."""
+        if action.type != ApprovalActionType.reply_finalize:
+            return
+        qid = action.payload_preview.get("question_id")
+        if not isinstance(qid, str) or not qid:
+            return
+        from src.api.deps import update_queue_status
+
+        update_queue_status(self.db_path, qid, status)
+
+    def _publish_if_needed(self, action: ApprovalAction) -> None:
+        """Invoke MCP bridge only for Docs/Gmail publish actions."""
+        if action.type == ApprovalActionType.docs_append:
+            mcp_bridge.publish_docs_append(action)
+        elif action.type == ApprovalActionType.gmail_draft:
+            mcp_bridge.publish_gmail_draft(action)
+
     def approve(self, action_id: str) -> ApprovalAction:
-        """Mark approved. Does not invoke MCP (bridge is a separate layer)."""
-        return self.store.update_fields(
+        """Mark approved, then publish Docs/Gmail via bridge when applicable."""
+        action = self.store.update_fields(
             action_id,
             status=ApprovalStatus.approved,
             decided_at=datetime.now(timezone.utc).replace(tzinfo=None),
             set_decided=True,
         )
+        self._sync_queue_for_reply(action, status=QueueStatus.approved)
+        self._publish_if_needed(action)
+        return action
 
     def reject(self, action_id: str) -> ApprovalAction:
         """Reject only ``action_id``; siblings unchanged. No MCP call."""
-        return self.store.update_fields(
+        action = self.store.update_fields(
             action_id,
             status=ApprovalStatus.rejected,
             decided_at=datetime.now(timezone.utc).replace(tzinfo=None),
             set_decided=True,
         )
+        self._sync_queue_for_reply(action, status=QueueStatus.rejected)
+        return action
 
 
 # Module-level helpers matching the plan Interfaces block (require a service).

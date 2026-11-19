@@ -17,30 +17,36 @@ def get_approvals(request: Request) -> list[dict]:
 def approve_action(
     action_id: str,
     request: Request,
-    invoke_mcp: bool = Query(default=False),
+    invoke_mcp: bool = Query(
+        default=True,
+        description=(
+            "Legacy flag. Docs/Gmail publish is owned by ApprovalService.approve "
+            "(dry-run receipts unless MCP_LIVE=1). False still approves status "
+            "but skips the bridge."
+        ),
+    ),
 ) -> dict:
-    """Approve one action. MCP is opt-in via ``invoke_mcp`` (Task 13 wires bridge)."""
+    """Approve one action; Docs/Gmail go through the gated MCP bridge."""
     svc = ApprovalService(get_db_path(request))
     try:
-        action = svc.approve(action_id)
+        if not invoke_mcp:
+            from datetime import datetime, timezone
+
+            from src.models import ApprovalStatus, QueueStatus
+
+            action = svc.store.update_fields(
+                action_id,
+                status=ApprovalStatus.approved,
+                decided_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                set_decided=True,
+            )
+            svc._sync_queue_for_reply(action, status=QueueStatus.approved)
+        else:
+            action = svc.approve(action_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    if invoke_mcp:
-        # Soft hook — real bridge lands in Task 13; never fail closed here for missing module.
-        try:
-            from src import mcp_bridge  # type: ignore
-
-            if action.type.value == "docs_append" and hasattr(
-                mcp_bridge, "publish_docs_append"
-            ):
-                mcp_bridge.publish_docs_append(action)
-            elif action.type.value == "gmail_draft" and hasattr(
-                mcp_bridge, "publish_gmail_draft"
-            ):
-                mcp_bridge.publish_gmail_draft(action)
-        except ImportError:
-            pass
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return serialize_model(action)
 
 

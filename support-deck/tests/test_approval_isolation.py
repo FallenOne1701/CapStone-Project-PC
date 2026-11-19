@@ -79,37 +79,49 @@ def test_approve_one_leaves_other_pending(tmp_path):
     assert sibling.status == ApprovalStatus.pending_approval
 
 
-def test_approve_does_not_invoke_mcp(tmp_path, monkeypatch):
+def test_approve_docs_calls_bridge_reject_does_not(tmp_path, monkeypatch):
+    """Task 13: approve docs/gmail invokes bridge once; reject never does.
+    Store stays free of MCP imports.
+    """
     svc = _svc(tmp_path)
     mcp_calls: list[str] = []
     fake = ModuleType("src.mcp_bridge")
 
-    def boom(name):
+    def track(name):
         def _inner(*_a, **_k):
             mcp_calls.append(name)
-            raise AssertionError(f"MCP called: {name}")
 
         return _inner
 
-    fake.publish_docs_append = boom("docs")
-    fake.publish_gmail_draft = boom("gmail")
-    monkeypatch.setitem(sys.modules, "src.mcp_bridge", fake)
+    fake.publish_docs_append = track("docs")
+    fake.publish_gmail_draft = track("gmail")
 
-    action = svc.create_action(
+    import src.approval.service as service_mod
+
+    monkeypatch.setitem(sys.modules, "src.mcp_bridge", fake)
+    monkeypatch.setattr(service_mod, "mcp_bridge", fake)
+
+    docs = svc.create_action(
         action_type=ApprovalActionType.docs_append,
         payload_preview={"summary": "doc"},
         content="body",
     )
-    approved = svc.approve(action.action_id)
-    assert approved.status == ApprovalStatus.approved
+    mail = svc.create_action(
+        action_type=ApprovalActionType.gmail_draft,
+        payload_preview={"summary": "mail", "destinations": ["to:ops@example.com"]},
+        content="body B",
+    )
+    svc.reject(mail.action_id)
     assert mcp_calls == []
+
+    approved = svc.approve(docs.action_id)
+    assert approved.status == ApprovalStatus.approved
+    assert mcp_calls == ["docs"]
 
     from pathlib import Path
     import src.approval.store as store_mod
-    import src.approval.service as service_mod
 
     assert "mcp_bridge" not in Path(store_mod.__file__).read_text(encoding="utf-8")
-    assert "mcp_bridge" not in Path(service_mod.__file__).read_text(encoding="utf-8")
 
 
 def test_get_missing_action_raises(tmp_path):
