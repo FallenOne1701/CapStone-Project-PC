@@ -75,6 +75,16 @@ class FeeExplainer(BaseModel):
         return value
 
 
+class FrequencyBucket(BaseModel):
+    """One normalized-question tally. `count` is lifetime records, not the rolling window."""
+
+    bucket_id: str
+    normalized_text: str
+    count: int = 0
+    window_start: datetime | None = None
+    window_end: datetime | None = None
+
+
 class FrequencySignal(BaseModel):
     normalized_text: str
     count: int

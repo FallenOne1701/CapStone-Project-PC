@@ -358,13 +358,13 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 - `record_question(text: str, at: datetime) -> FrequencyBucket`
 - `signals_for_pulse(window_days: int = 7, threshold: int = 5) -> list[FrequencySignal]`
 
-- [ ] **Step 1: Test — 5 normalized duplicates in 7 days → one signal with count≥5**
+- [x] **Step 1: Test — 5 normalized duplicates in 7 days → one signal with count≥5**
 
-- [ ] **Step 2: Hook `record_question` into desk pipeline after enqueue**
+- [x] **Step 2: Hook `record_question` into desk pipeline after enqueue**
 
-- [ ] **Step 3: Hook `signals_for_pulse` into weekly runner input / pulse prompt appendix**
+- [x] **Step 3: Hook `signals_for_pulse` into weekly runner input / pulse prompt appendix**
 
-- [ ] **Step 4: Commit** — `support-deck: frequency→pulse connector`
+- [x] **Step 4: Commit** — `support-deck: frequency→pulse connector`
 
 ### Task 10: Explainer reuse path
 

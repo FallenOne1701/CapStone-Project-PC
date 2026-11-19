@@ -147,6 +147,28 @@ def _maybe_fee_explainer(
     return saved.explainer_id
 
 
+def _append_frequency_appendix(artifacts: WeeklyArtifacts, *, db_path: Path) -> None:
+    """Merge queue frequency signals into the pulse artifact before it is hashed.
+
+    The callout is queue counts plus the window. It does not invent Play review ids.
+    """
+    from src.connectors.frequency import render_pulse_appendix, signals_for_pulse
+
+    threshold = int(get_settings().frequency_threshold)
+    signals = signals_for_pulse(
+        window_days=7, threshold=threshold, db_path=db_path
+    )
+    appendix = render_pulse_appendix(signals)
+    if not appendix:
+        return
+    body = artifacts.pulse_path.read_text(encoding="utf-8")
+    if "## Support queue frequency" in body:
+        return
+    artifacts.pulse_path.write_text(
+        body.rstrip() + "\n\n" + appendix, encoding="utf-8"
+    )
+
+
 def _create_pending_publish_actions(
     artifacts: WeeklyArtifacts,
     *,
@@ -194,6 +216,7 @@ def run_weekly_to_pending(
     explainer_id = _maybe_fee_explainer(
         artifacts, db_path=path, fee_sources=fee_sources
     )
+    _append_frequency_appendix(artifacts, db_path=path)
     service = ApprovalService(path)
     actions = _create_pending_publish_actions(artifacts, service=service)
     return WeeklyPendingResult(

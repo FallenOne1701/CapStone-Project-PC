@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.approval.service import ApprovalService
 from src.config import get_settings
+from src.connectors.frequency import record_question
 from src.db import connect, init_db
 from src.desk import agents
 from src.desk.orchestrator import orchestrate
@@ -96,6 +97,7 @@ def process_question(
         updated_at=now,
     )
     _persist_queue_item(path, item)
+    record_question(safe_text, at=now, db_path=path)
 
     if item.status == QueueStatus.drafted:
         service = ApprovalService(path)
