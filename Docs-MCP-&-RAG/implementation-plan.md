@@ -4,7 +4,7 @@
 
 **Goal:** Build an on-demand weekly review-pulse pipeline for the Groww Play app that imports ~8–12 weeks of public reviews, clusters ≤5 themes, writes a ≤250-word note (top 3 themes, 3 verbatim quotes, 3 actions), then delivers via Google Docs + Gmail draft using MCP.
 
-**Architecture:** Separate `pulse/` Python package beside the FAQ stack. Public Play fetch → PII strip → LangChain (Groq) theme + pulse chains → deterministic auditor → `pulse/out/` artifacts. Operator/agent publishes with [MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1) (`google_docs_append_content` + `gmail_create_draft`; no custom Google OAuth/REST; no LangChain Google toolkits). Optional weekly GitHub Actions cron runs `run_pulse --live` and uploads artifacts; Docs/Gmail stay manual via MCP. FAQ `frontend/` + `backend/` and Vercel/Railway stay untouched until a later combined-demo merge.
+**Architecture:** Separate `pulse/` Python package beside the FAQ stack. Public Play fetch → PII strip → LangChain (Groq) theme + pulse chains → deterministic auditor → `pulse/out/` artifacts. Human/agent publishes with [MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1) (`google_docs_append_content` + `gmail_create_draft`; no custom Google OAuth/REST; no LangChain Google toolkits). Optional weekly GitHub Actions cron runs `run_pulse --live` and uploads artifacts; Docs/Gmail stay manual via MCP. FAQ `frontend/` + `backend/` and Vercel/Railway stay untouched until a later combined-demo merge.
 
 **Tech Stack:** Python 3.11+, `google-play-scraper`, pydantic, python-dotenv, LangChain + `langchain-groq`, pytest, Groq chat model; Docs/Gmail via [FallenOne1701/MCP-Server-1](https://github.com/FallenOne1701/MCP-Server-1)
 
@@ -1261,9 +1261,9 @@ git commit -m "feat(pulse): CLI run_pulse sample and live paths"
 
 **Interfaces:**
 - Consumes: `pulse/out/pulse-YYYY-MM-DD.md`, env `PULSE_DRAFT_TO`, env `PULSE_DOC_ID` (pre-created Google Doc)
-- Produces: operator checklist that appends pulse content to that Doc and creates a Gmail draft via MCP-Server-1 tools
+- Produces: checklist that appends pulse content to that Doc and creates a Gmail draft via MCP-Server-1 tools
 
-- [ ] **Step 1: Write `Docs-MCP-&-RAG/mcp-runbook.md`**
+- [x] **Step 1: Write `Docs-MCP-&-RAG/mcp-runbook.md`**
 
 Must include:
 
@@ -1288,9 +1288,9 @@ Include this tool table (already bound — verify status when dry-running):
 | Create Gmail draft | `gmail_create_draft` | |
 | Send email | `gmail_send_email` | unused for v1 |
 
-- [ ] **Step 2: Dry-run the runbook once in the agent environment** (human/agent): append sample pulse + create draft. Confirm tools appear in Cursor and mark Status in the table.
+- [x] **Step 2: Dry-run the runbook once in the agent environment** (human/agent): append sample pulse + create draft. Confirm tools appear in Cursor and mark Status in the table.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add Docs-MCP-&-RAG/mcp-runbook.md

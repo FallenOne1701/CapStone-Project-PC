@@ -22,3 +22,12 @@ pulse/.env
 pulse/data/raw/*
 !pulse/data/raw/.gitkeep
 !pulse/data/samples/
+
+# Support Deck track
+support-deck/.env
+support-deck/data/*.db
+support-deck/data/fixtures/mcp-receipts/*.json
+support-deck/.venv/
+support-deck/__pycache__/
+support-deck/**/__pycache__/
+support-deck/.pytest_cache/

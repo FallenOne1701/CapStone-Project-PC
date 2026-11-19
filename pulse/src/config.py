@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     pulse_lang: str = "en"
     pulse_country: str = "in"
     pulse_draft_to: str = ""
+    pulse_doc_id: str = ""
     pulse_max_reviews: int = 500
 
     @property

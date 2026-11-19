@@ -346,7 +346,7 @@ Course requirement: use MCP for Google Docs and Gmail so the agent/app does not 
 | `gmail_create_draft` | Notify via draft | Creates draft only; does not send |
 | `gmail_send_email` | **Not used** for success criteria | Keep unused unless a human explicitly wants send |
 
-**Doc-create gap (accepted):** this MCP cannot create a new Google Doc. Operator creates a blank Doc once in Drive (or reuses a template), stores `PULSE_DOC_ID`, then each week the agent appends that week’s pulse via `google_docs_append_content`. That still satisfies MCP-first Docs delivery.
+**Doc-create gap (accepted):** this MCP cannot create a new Google Doc. Create a blank Doc once in Drive (or reuse a template), store `PULSE_DOC_ID`, then each week the agent appends that week’s pulse via `google_docs_append_content`. That still satisfies MCP-first Docs delivery.
 
 Setup (when wiring): clone/build MCP-Server-1, enable Gmail API + Docs API, run `npm run auth`, point Cursor `mcpServers` at `dist/server.js` (or `npm run dev`) per that repo’s README. Google client secrets and tokens live with the MCP server — never in `pulse/`.
 
@@ -354,7 +354,7 @@ Setup (when wiring): clone/build MCP-Server-1, enable Gmail API + Docs API, run 
 
 ```mermaid
 sequenceDiagram
-  participant Human as Operator / Agent
+  participant Human as Human / Agent
   participant Art as pulse/out artifacts
   participant DocsMCP as MCP-Server-1 Docs
   participant GmailMCP as MCP-Server-1 Gmail
@@ -410,7 +410,7 @@ pulse/
     └── pulse-YYYY-MM-DD.md
 ```
 
-**MCP steps** are documented as operator/agent runbook in `pulse/README.md` and `Docs-MCP-&-RAG/` (not buried inside FastAPI).
+**MCP steps** are documented as a human/agent runbook in `pulse/README.md` and `Docs-MCP-&-RAG/` (not buried inside FastAPI).
 
 ---
 
@@ -538,7 +538,7 @@ Shared monorepo branding: both are Groww-context capstone tracks; **data planes 
 - Docs publish requires a pre-existing `document_id` (append-only; no create-doc tool)  
 - iOS coverage may lag Android  
 - Capstone system: educational demo, not an official Groww internal tool  
-- No built-in weekly cron in v1 — operators re-run the CLI when a new pulse is needed  
+- No built-in weekly cron in v1 — re-run the CLI when a new pulse is needed  
 - LangChain versions move quickly; pin deps in `pulse/requirements.txt`  
 
 ---

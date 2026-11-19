@@ -10,6 +10,14 @@ Facts-only FAQ for five HDFC schemes (Groww corpus). **No investment advice.**
 
 Disclaimer: **Facts-only. No investment advice.**
 
+## Tracks
+
+| Track | Docs | Code | Host |
+|-------|------|------|------|
+| FAQ | `Docs-FAQ/` | `frontend/`, `backend/` | Vercel + Railway |
+| Weekly pulse | `Docs-MCP-&-RAG/` | `pulse/` | Local CLI + MCP-Server-1 |
+| Support Deck | `DOCS-AI-Agent-Support-Deck/` | `support-deck/` (+ Support Deck routes in `frontend/`) | Compose FAQ hosts + local/API `:8001`; MCP after approve |
+
 ## Local development
 
 ### Backend
