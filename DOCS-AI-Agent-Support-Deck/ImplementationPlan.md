@@ -421,19 +421,19 @@ def test_edit_one_does_not_change_sibling_hash(tmp_path):
 
 **Views:** Queue, Pulse, Sources, Approvals, Explainers — match Architecture §11
 
-- [ ] **Step 1: API client pointing at Support Deck base URL env `NEXT_PUBLIC_SUPPORT_DECK_URL`**
+- [x] **Step 1: API client pointing at Support Deck base URL env `NEXT_PUBLIC_SUPPORT_DECK_URL`**
 
-- [ ] **Step 2: Queue page — list, detail, edit, approve/reject reply actions**
+- [x] **Step 2: Queue page — list, detail, edit, approve/reject reply actions**
 
-- [ ] **Step 3: Pulse + Explainers pages — show artifacts; button “Prepare publish” → pending actions**
+- [x] **Step 3: Pulse + Explainers pages — show artifacts; button “Prepare publish” → pending actions**
 
-- [ ] **Step 4: Approvals page — exact payload + destination; approve/reject**
+- [x] **Step 4: Approvals page — exact payload + destination; approve/reject**
 
-- [ ] **Step 5: Sources page — claim → URL + last-checked**
+- [x] **Step 5: Sources page — claim → URL + last-checked**
 
-- [ ] **Step 6: Manual smoke on localhost (FAQ `/` still works)**
+- [x] **Step 6: Manual smoke on localhost (FAQ `/` still works)**
 
-- [ ] **Step 7: Commit** — `frontend: Support Deck operator UI`
+- [x] **Step 7: Commit** — `frontend: Support Deck operator UI`
 
 ---
 

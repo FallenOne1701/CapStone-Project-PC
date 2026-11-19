@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-800">
             <svg
@@ -33,6 +35,12 @@ export function AppHeader() {
             </span>
           </div>
         </div>
+        <Link
+          href="/support-deck"
+          className="text-sm font-semibold text-brand-800 underline-offset-2 hover:underline"
+        >
+          Support Deck
+        </Link>
       </div>
     </header>
   );
