@@ -246,7 +246,7 @@ Run: `cd support-deck && pytest tests/test_db_init.py -v` (create this test file
 **Interfaces:**
 - Produces: `detect_fee_confusion(themes: ThemeResult) -> bool`; `generate_fee_explainer(question_hint: str, sources: list[str]) -> FeeExplainer` with `bullets: list[str]` (≤6), `links: list[str]` (len==2), `last_checked: date`
 
-- [ ] **Step 1: Failing test — explainer with 7 bullets or 1 link fails validation**
+- [x] **Step 1: Failing test — explainer with 7 bullets or 1 link fails validation**
 
 ```python
 def test_explainer_rejects_bad_shape():
@@ -254,11 +254,11 @@ def test_explainer_rejects_bad_shape():
         FeeExplainer(bullets=["a"]*7, links=["https://a", "https://b"], last_checked="2026-11-18")
 ```
 
-- [ ] **Step 2: Implement Pydantic validation + generator (Groq structured output; fixture mode without API for unit tests)**
+- [x] **Step 2: Implement Pydantic validation + generator (Groq structured output; fixture mode without API for unit tests)**
 
-- [ ] **Step 3: Persist via `explainers` table upsert**
+- [x] **Step 3: Persist via `explainers` table upsert**
 
-- [ ] **Step 4: Commit** — `support-deck: fee detect + explainer store`
+- [x] **Step 4: Commit** — `support-deck: fee detect + explainer store`
 
 ### Task 5: Approval store — create, edit, approve, reject (isolation)
 
