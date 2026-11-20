@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.config import get_settings
 from src.models import ApprovalAction, ApprovalActionType
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -139,8 +140,8 @@ def publish_docs_append(action: ApprovalAction) -> None:
             f"publish_docs_append requires docs_append, got {action.type}"
         )
     content = _resolve_content(action)
-    from src.config import get_settings
-
+    # get_settings is imported at module load (Support Deck embed). Do not
+    # ``from src.config import ...`` here — after embed, ``src`` is the FAQ tree.
     doc_id = _dest_value(action, "doc_id:") or get_settings().pulse_doc_id
     arguments: dict[str, Any] = {
         "document_id": doc_id,
@@ -164,8 +165,6 @@ def publish_gmail_draft(action: ApprovalAction) -> None:
             f"publish_gmail_draft requires gmail_draft, got {action.type}"
         )
     content = _resolve_content(action)
-    from src.config import get_settings
-
     settings = get_settings()
     draft_to = _dest_value(action, "to:") or settings.pulse_draft_to
     doc_id = settings.pulse_doc_id

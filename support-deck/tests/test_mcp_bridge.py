@@ -204,3 +204,41 @@ def test_store_still_has_no_mcp_bridge():
     import src.approval.store as store_mod
 
     assert "mcp_bridge" not in Path(store_mod.__file__).read_text(encoding="utf-8")
+
+
+def test_gmail_publish_survives_faq_src_config_swap(tmp_path, monkeypatch):
+    """After Railway embed, ``sys.modules['src']`` is FAQ — lazy config import must not run."""
+    from types import SimpleNamespace
+
+    from src import mcp_bridge
+    from src.models import ApprovalAction
+
+    receipts = tmp_path / "mcp-receipts"
+    monkeypatch.delenv("MCP_LIVE", raising=False)
+    monkeypatch.setattr(mcp_bridge, "RECEIPTS_DIR", receipts)
+
+    # Simulate FAQ Settings (no pulse_* fields) winning the ``src.config`` name.
+    faq_config = ModuleType("src.config")
+
+    def faq_get_settings():
+        return SimpleNamespace(
+            chat_model="x",
+            groq_api_key="y",
+        )
+
+    faq_config.get_settings = faq_get_settings
+    monkeypatch.setitem(sys.modules, "src.config", faq_config)
+
+    action = ApprovalAction(
+        action_id="act-gmail-embed",
+        type=ApprovalActionType.gmail_draft,
+        payload_preview={
+            "summary": "Gmail draft",
+            "destinations": ["to:(unset PULSE_DRAFT_TO)"],
+            "_publish_body": "# Pulse\nbody",
+        },
+        content_hash="abc",
+        status=ApprovalStatus.approved,
+    )
+    mcp_bridge.publish_gmail_draft(action)
+    assert list(receipts.glob("*.json"))

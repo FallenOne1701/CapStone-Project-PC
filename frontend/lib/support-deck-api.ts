@@ -201,9 +201,11 @@ export function getApprovals(): Promise<ApprovalAction[]> {
 
 export function approveAction(
   actionId: string,
-  invokeMcp = false,
+  invokeMcp = true,
 ): Promise<ApprovalAction> {
-  const q = invokeMcp ? "?invoke_mcp=true" : "";
+  // Always send the flag — API Query default is True, so omitting it silently
+  // invoked MCP even when callers intended false.
+  const q = `?invoke_mcp=${invokeMcp ? "true" : "false"}`;
   return request<ApprovalAction>(
     `/approvals/${encodeURIComponent(actionId)}/approve${q}`,
     { method: "POST" },

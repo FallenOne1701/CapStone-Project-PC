@@ -13,7 +13,7 @@ from src.config import get_settings
 from src.rag.orchestrator import answer_query
 from src_isolation import SRC_SWAP_LOCK
 
-APP_BUILD = "support-deck-embed-5"
+APP_BUILD = "support-deck-embed-6"
 
 app = FastAPI(
     title="Mutual Fund FAQ Assistant API",
