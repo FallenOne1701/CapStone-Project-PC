@@ -54,6 +54,7 @@ def _groq_explainer(question_hint: str, links: list[str]) -> FeeExplainer:
         api_key=settings.groq_api_key,
         model=settings.groq_chat_model,
         temperature=0,
+        base_url="https://api.groq.com",
     )
     prompt = ChatPromptTemplate.from_messages(
         [

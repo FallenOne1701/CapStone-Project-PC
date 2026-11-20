@@ -1,7 +1,5 @@
-# Monorepo: Railway may build from repo root.
-# Prefer setting service Root Directory to /backend in the Railway UI
-# and Config File path to /backend/railway.toml.
-# This root file is a fallback start command if Root Directory is still /.
+# Monorepo deploy: include backend + support-deck (+ pulse for weekly).
+# Set Railway Root Directory to `/` (repo root) and Config File to `/railway.toml`.
 
 [build]
 builder = "RAILPACK"

@@ -108,11 +108,17 @@ export interface WeeklyRunResult {
   explainer_id: string | null;
 }
 
+/**
+ * Browser calls the same-origin Next.js proxy (`/api/support-deck/...`) by
+ * default — same pattern as FAQ `/api/ask` — so CORS to :8001 is avoided.
+ * Set NEXT_PUBLIC_SUPPORT_DECK_URL to an absolute URL only to bypass the proxy.
+ */
 export function supportDeckApiBase(): string {
   const raw =
-    (typeof process !== "undefined" &&
-      process.env.NEXT_PUBLIC_SUPPORT_DECK_URL?.trim()) ||
-    "http://127.0.0.1:8001";
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_SUPPORT_DECK_URL?.trim()
+      : undefined;
+  if (!raw || raw === "/" || raw === "same-origin") return "";
   return raw.replace(/\/+$/, "");
 }
 
@@ -135,8 +141,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
+    const where = supportDeckApiBase() || "(same-origin /api/support-deck proxy)";
     throw new Error(
-      `Cannot reach Support Deck API at ${supportDeckApiBase()} (${why}). Is it running on port 8001?`,
+      `Cannot reach Support Deck API at ${where} (${why}). Is the Support Deck process running on port 8001?`,
     );
   }
   if (!res.ok) {
