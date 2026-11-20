@@ -32,7 +32,13 @@ def get_queue(request: Request) -> list[dict]:
 @router.post("/queue")
 def post_queue(body: EnqueueBody, request: Request) -> dict:
     db = get_db_path(request)
-    item = process_question(body.question, db_path=db, fixture_mode=None)
+    try:
+        item = process_question(body.question, db_path=db, fixture_mode=None)
+    except Exception as exc:  # noqa: BLE001 — surface root cause to UI/ops
+        raise HTTPException(
+            status_code=500,
+            detail=f"Support Deck enqueue failed: {type(exc).__name__}: {exc}",
+        ) from exc
     return serialize_model(item)
 
 
