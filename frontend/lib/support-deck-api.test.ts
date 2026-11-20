@@ -20,9 +20,9 @@ describe("supportDeckApiBase", () => {
     delete process.env.NEXT_PUBLIC_SUPPORT_DECK_URL;
   });
 
-  it("defaults to localhost:8001 when env unset", () => {
+  it("defaults to same-origin proxy when env unset", () => {
     delete process.env.NEXT_PUBLIC_SUPPORT_DECK_URL;
-    assert.equal(supportDeckApiBase(), "http://127.0.0.1:8001");
+    assert.equal(supportDeckApiBase(), "");
   });
 
   it("strips trailing slash from NEXT_PUBLIC_SUPPORT_DECK_URL", () => {
@@ -37,8 +37,8 @@ describe("support-deck-api fetch helpers", () => {
     delete process.env.NEXT_PUBLIC_SUPPORT_DECK_URL;
   });
 
-  it("getQueue GETs /api/support-deck/queue", async () => {
-    process.env.NEXT_PUBLIC_SUPPORT_DECK_URL = "http://sd.test";
+  it("getQueue GETs same-origin /api/support-deck/queue by default", async () => {
+    delete process.env.NEXT_PUBLIC_SUPPORT_DECK_URL;
     const calls: { url: string; init?: RequestInit }[] = [];
     mock.method(globalThis, "fetch", async (url: string | URL, init?: RequestInit) => {
       calls.push({ url: String(url), init });
@@ -49,7 +49,7 @@ describe("support-deck-api fetch helpers", () => {
     });
 
     const items = await getQueue();
-    assert.equal(calls[0]?.url, "http://sd.test/api/support-deck/queue");
+    assert.equal(calls[0]?.url, "/api/support-deck/queue");
     assert.equal(calls[0]?.init?.method ?? "GET", "GET");
     assert.equal(items[0]?.question_id, "q-1");
   });

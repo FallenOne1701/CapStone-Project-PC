@@ -33,9 +33,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Compose Support Deck (/api/support-deck/*) when sibling package is in the image.
+from support_deck_embed import attach_support_deck  # noqa: E402
+
+_SUPPORT_DECK_ATTACHED = attach_support_deck(app)
 
 
 class AskRequest(BaseModel):
@@ -54,9 +59,15 @@ def health() -> dict[str, Any]:
             "status": "ok" if ok else "degraded",
             "build": APP_BUILD,
             "index": idx,
+            "support_deck": _SUPPORT_DECK_ATTACHED,
         }
     except Exception as exc:  # pragma: no cover
-        return {"status": "degraded", "build": APP_BUILD, "error": str(exc)}
+        return {
+            "status": "degraded",
+            "build": APP_BUILD,
+            "error": str(exc),
+            "support_deck": _SUPPORT_DECK_ATTACHED,
+        }
 
 
 @app.post("/api/ask")

@@ -18,6 +18,9 @@ _LOCAL_ORIGINS = (
     "http://127.0.0.1:3010",
 )
 
+# Any localhost / 127.0.0.1 port (Next may pick 3000–3010+, Cursor preview, etc.)
+_LOCAL_ORIGIN_REGEX = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
     """Build the Support Deck API (queue, weekly, approvals, sources)."""
@@ -32,6 +35,7 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(_LOCAL_ORIGINS),
+        allow_origin_regex=_LOCAL_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -1,3 +1,8 @@
+# Prefer repo-root deploy (Root Directory = `/`, config = `/railway.toml`)
+# so sibling `support-deck/` is in the image for Support Deck embed.
+# If this service still uses Root Directory `/backend`, Support Deck routes
+# will be missing until Root Directory is switched to `/`.
+
 [build]
 builder = "RAILPACK"
 

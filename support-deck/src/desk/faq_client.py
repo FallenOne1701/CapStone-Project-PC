@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 import threading
 from contextlib import contextmanager
@@ -14,6 +15,10 @@ from src.config import get_settings
 # (or policy∥retrieve threads) see ``ModuleNotFoundError: src.api.deps``
 # and the browser reports a generic "Failed to fetch".
 _BACKEND_IMPORT_LOCK = threading.Lock()
+
+# backend/src/config.py load_dotenv sets GROQ_BASE_URL=.../openai/v1, which
+# breaks langchain_groq (double /openai/v1 path). Snapshot + restore.
+_GROQ_ENV_KEYS = ("GROQ_BASE_URL",)
 
 
 @dataclass
@@ -33,6 +38,7 @@ def _backend_import_context() -> Iterator[None]:
             for key in list(sys.modules)
             if key == "src" or key.startswith("src.")
         }
+        env_snapshot = {key: os.environ.get(key) for key in _GROQ_ENV_KEYS}
         inserted = False
         if backend_root not in sys.path:
             sys.path.insert(0, backend_root)
@@ -49,6 +55,11 @@ def _backend_import_context() -> Iterator[None]:
                 except ValueError:
                     pass
             sys.modules.update(stashed)
+            for key, value in env_snapshot.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
 
 def _backend_retrieve(

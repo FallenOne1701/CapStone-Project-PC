@@ -62,10 +62,13 @@ def _groq_draft(q: str, retrieve: RetrieveResult) -> str:
     urls = ", ".join(retrieve.source_urls) or "(none)"
     searched = ", ".join(retrieve.searched) or "FAQ corpus"
 
+    # base_url without /openai/v1 — langchain_groq adds that path for openai/* models.
+    # Avoid backend load_dotenv GROQ_BASE_URL=.../openai/v1 (double path → 404).
     llm = ChatGroq(
         api_key=settings.groq_api_key,
         model=settings.groq_chat_model,
         temperature=0,
+        base_url="https://api.groq.com",
     )
     prompt = ChatPromptTemplate.from_messages(
         [
