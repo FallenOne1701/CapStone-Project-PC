@@ -35,7 +35,8 @@ export default function SourcesPage() {
             Sources
           </h1>
           <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-            Read-only audit: claim → URL + last-checked.
+            Fee-explainer audit only: each row is a claim → official URL +
+            last-checked from active explainers (not the full FAQ corpus).
           </p>
         </div>
         <div className="flex flex-wrap gap-space-sm">
@@ -44,6 +45,10 @@ export default function SourcesPage() {
           </span>
           <span className="rounded-lg bg-surface-container-lowest px-3 py-1.5 font-code-sm text-code-sm text-on-surface shadow-sm">
             with URL: {withUrl}
+          </span>
+          <span className="rounded-lg bg-surface-container-lowest px-3 py-1.5 font-code-sm text-code-sm text-on-surface shadow-sm">
+            unique URLs:{" "}
+            {new Set(claims.map((c) => c.url).filter(Boolean)).size}
           </span>
         </div>
       </div>

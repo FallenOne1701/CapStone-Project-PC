@@ -37,7 +37,27 @@ export default function ApprovalsPage() {
   }, []);
 
   useEffect(() => {
-    refresh().catch((err: Error) => setError(err.message));
+    let cancelled = false;
+    async function load() {
+      setError(null);
+      try {
+        await refresh();
+      } catch (err) {
+        // One quiet retry — concurrent Queue/Pulse SQLite writes can flake once.
+        try {
+          await new Promise((r) => setTimeout(r, 400));
+          if (!cancelled) await refresh();
+        } catch (err2) {
+          if (!cancelled) {
+            setError(err2 instanceof Error ? err2.message : String(err2));
+          }
+        }
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
 
   const pendingCount = useMemo(
