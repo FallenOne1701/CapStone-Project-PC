@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     groq_chat_model: str = Field(
-        default="llama-3.3-70b-versatile", alias="GROQ_CHAT_MODEL"
+        default="openai/gpt-oss-120b", alias="GROQ_CHAT_MODEL"
     )
     support_deck_db: Path = Field(
         default=PACKAGE_ROOT / "data" / "support_deck.db",
