@@ -35,3 +35,9 @@ support-deck/.pytest_cache/
 backend/support-deck/data/*.db
 backend/support-deck/.env
 
+
+backend/pulse/out/*.md
+backend/pulse/out/themes.json
+backend/pulse/.env
+backend/support-deck/data/*.db
+

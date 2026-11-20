@@ -76,6 +76,16 @@ def orchestrate(
     lower = text.lower()
     has_not_covered = "not_covered" in lower
     has_chunks = bool(retrieve.chunks) or bool(retrieve.source_urls)
+
+    # If the LLM declined but retrieve returned grounded passages, prefer a
+    # facts-only fixture draft (sample exit-load questions often hit this).
+    if has_not_covered and has_chunks:
+        from src.desk.draft_agent import _fixture_draft
+
+        text = _fixture_draft(text, retrieve)
+        lower = text.lower()
+        has_not_covered = "not_covered" in lower
+
     citation = _pick_citation(text, retrieve) if has_chunks else None
 
     if has_not_covered or not has_chunks or not citation:

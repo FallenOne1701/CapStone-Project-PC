@@ -4,7 +4,7 @@ import json
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from src.api.deps import get_db_path, serialize_model
+from src.api.deps import get_db_path, list_explainers, serialize_model
 from src.weekly import runner as weekly_runner
 
 router = APIRouter(tags=["weekly"])
@@ -44,7 +44,13 @@ def weekly_run(
     live: bool = Query(default=False),
 ) -> dict:
     db = get_db_path(request)
-    result = weekly_runner.run_weekly_to_pending(live=live, db_path=db)
+    try:
+        result = weekly_runner.run_weekly_to_pending(live=live, db_path=db)
+    except Exception as exc:  # noqa: BLE001 — surface to Pulse UI
+        raise HTTPException(
+            status_code=500,
+            detail=f"weekly/run failed: {type(exc).__name__}: {exc}",
+        ) from exc
     pulse = _pulse_payload_from_artifacts(result.artifacts)
     request.app.state.last_pulse = pulse
     return {
@@ -74,6 +80,4 @@ def get_pulse(request: Request) -> dict:
 
 @router.get("/explainers")
 def get_explainers(request: Request) -> list[dict]:
-    from src.api.deps import list_explainers
-
     return [serialize_model(e) for e in list_explainers(get_db_path(request))]

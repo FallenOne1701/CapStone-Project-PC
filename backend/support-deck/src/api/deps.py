@@ -9,6 +9,10 @@ from fastapi import Request
 from src.db import connect
 from src.models import ApprovalAction, FeeExplainer, QueueItem, QueueStatus
 
+# Set during Support Deck embed so request handlers never lazy-import ``src.*``
+# (FAQ and Support Deck share the name ``src`` on Railway).
+_ApprovalService = None
+
 
 def get_db_path(request: Request) -> Path:
     return Path(request.app.state.db_path)
@@ -120,9 +124,11 @@ def update_queue_status(
 
 
 def list_approval_actions(db_path: Path) -> list[ApprovalAction]:
-    from src.approval.service import ApprovalService
-
-    return ApprovalService(db_path).list_actions()
+    if _ApprovalService is None:
+        raise RuntimeError(
+            "Support Deck ApprovalService not bound — embed did not finish init"
+        )
+    return _ApprovalService(db_path).list_actions()
 
 
 def list_explainers(db_path: Path, *, active_only: bool = False) -> list[FeeExplainer]:

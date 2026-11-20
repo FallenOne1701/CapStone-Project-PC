@@ -11,8 +11,9 @@ from pydantic import BaseModel, Field
 from src.api.respond import map_answer_to_response
 from src.config import get_settings
 from src.rag.orchestrator import answer_query
+from src_isolation import SRC_SWAP_LOCK
 
-APP_BUILD = "support-deck-embed-3"
+APP_BUILD = "support-deck-embed-4"
 
 app = FastAPI(
     title="Mutual Fund FAQ Assistant API",
@@ -49,25 +50,30 @@ class AskRequest(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    from src.ingest.ensure_index import index_status
+    # Lock so we never import FAQ ``src.*`` while Support Deck middleware has
+    # swapped the package tree (symptom: No module named 'src.ingest').
+    with SRC_SWAP_LOCK:
+        from src.ingest.ensure_index import index_status
 
-    try:
-        idx = index_status()
-        active = idx.get("active", {})
-        ok = bool(active.get("collection_exists") and active.get("chunk_count", 0) > 0)
-        return {
-            "status": "ok" if ok else "degraded",
-            "build": APP_BUILD,
-            "index": idx,
-            "support_deck": _SUPPORT_DECK_ATTACHED,
-        }
-    except Exception as exc:  # pragma: no cover
-        return {
-            "status": "degraded",
-            "build": APP_BUILD,
-            "error": str(exc),
-            "support_deck": _SUPPORT_DECK_ATTACHED,
-        }
+        try:
+            idx = index_status()
+            active = idx.get("active", {})
+            ok = bool(
+                active.get("collection_exists") and active.get("chunk_count", 0) > 0
+            )
+            return {
+                "status": "ok" if ok else "degraded",
+                "build": APP_BUILD,
+                "index": idx,
+                "support_deck": _SUPPORT_DECK_ATTACHED,
+            }
+        except Exception as exc:  # pragma: no cover
+            return {
+                "status": "degraded",
+                "build": APP_BUILD,
+                "error": str(exc),
+                "support_deck": _SUPPORT_DECK_ATTACHED,
+            }
 
 
 @app.post("/api/ask")
@@ -75,35 +81,36 @@ def ask(body: AskRequest) -> dict[str, Any]:
     question = body.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="question must not be empty")
-    try:
-        settings = get_settings()
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    with SRC_SWAP_LOCK:
+        try:
+            settings = get_settings()
+        except RuntimeError as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    try:
-        text = answer_query(question, settings)
-    except AuthenticationError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="Groq API key is invalid. Check GROQ_API_KEY in backend/.env.",
-        ) from exc
-    except NotFoundError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=(
-                "Groq model not found. Set GROQ_CHAT_MODEL=openai/gpt-oss-120b "
-                "in backend/.env (llama-3.3-70b-versatile is retired)."
-            ),
-        ) from exc
-    except APIError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Groq API error: {exc.message or str(exc)}",
-        ) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"FAQ backend failed: {exc}",
-        ) from exc
+        try:
+            text = answer_query(question, settings)
+        except AuthenticationError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Groq API key is invalid. Check GROQ_API_KEY in backend/.env.",
+            ) from exc
+        except NotFoundError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Groq model not found. Set GROQ_CHAT_MODEL=openai/gpt-oss-120b "
+                    "in backend/.env (llama-3.3-70b-versatile is retired)."
+                ),
+            ) from exc
+        except APIError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Groq API error: {exc.message or str(exc)}",
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"FAQ backend failed: {exc}",
+            ) from exc
 
-    return map_answer_to_response(text, settings)
+        return map_answer_to_response(text, settings)

@@ -25,6 +25,7 @@ def build_chat_model(settings: Settings | None = None) -> ChatGroq:
         api_key=settings.groq_api_key,
         model=settings.groq_chat_model,
         temperature=0.2,
+        base_url="https://api.groq.com",
     )
 
 

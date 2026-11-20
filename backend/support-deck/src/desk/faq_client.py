@@ -12,9 +12,11 @@ from src.config import get_settings
 
 # Backend and Support Deck both use a top-level ``src`` package. Swapping
 # ``sys.modules`` must be exclusive — otherwise parallel FastAPI requests
-# (or policy∥retrieve threads) see ``ModuleNotFoundError: src.api.deps``
-# and the browser reports a generic "Failed to fetch".
-_BACKEND_IMPORT_LOCK = threading.Lock()
+# see ``ModuleNotFoundError: src.ingest`` / ``src.api.deps``.
+try:
+    from src_isolation import SRC_SWAP_LOCK as _BACKEND_IMPORT_LOCK
+except ImportError:  # standalone Support Deck process
+    _BACKEND_IMPORT_LOCK = threading.Lock()
 
 # backend/src/config.py load_dotenv sets GROQ_BASE_URL=.../openai/v1, which
 # breaks langchain_groq (double /openai/v1 path). Snapshot + restore.
