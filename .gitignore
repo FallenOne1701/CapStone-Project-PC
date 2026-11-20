@@ -31,3 +31,7 @@ support-deck/.venv/
 support-deck/__pycache__/
 support-deck/**/__pycache__/
 support-deck/.pytest_cache/
+
+backend/support-deck/data/*.db
+backend/support-deck/.env
+

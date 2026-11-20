@@ -3,6 +3,10 @@
 Backend and Support Deck both use a top-level ``src`` package. We import Support
 Deck in an isolated ``sys.modules`` window, ``include_router`` its APIs onto the
 FAQ app, then restore FAQ ``src.*``. Route callables keep Support Deck module refs.
+
+Looks for Support Deck at:
+1. ``backend/support-deck`` (bundled mirror — works when Railway Root Directory is ``/backend``)
+2. ``../support-deck`` (monorepo sibling when Root Directory is repo ``/``)
 """
 
 from __future__ import annotations
@@ -18,16 +22,36 @@ from fastapi import FastAPI
 log = logging.getLogger("support_deck_embed")
 
 
+def _resolve_support_deck_root() -> Path | None:
+    if os.environ.get("SUPPORT_DECK_ROOT"):
+        p = Path(os.environ["SUPPORT_DECK_ROOT"]).resolve()
+        return p if (p / "src" / "api" / "app.py").is_file() else None
+
+    backend_dir = Path(__file__).resolve().parent
+    candidates = [
+        backend_dir / "support-deck",  # bundled for Railway Root=/backend
+        backend_dir.parent / "support-deck",  # monorepo sibling
+    ]
+    for cand in candidates:
+        if (cand / "src" / "api" / "app.py").is_file():
+            return cand.resolve()
+    return None
+
+
 def attach_support_deck(host: FastAPI) -> bool:
-    """Attach Support Deck routes when ``../support-deck`` is present. Returns True if attached."""
-    repo_root = Path(__file__).resolve().parents[1]
-    sd_root = Path(
-        os.environ.get("SUPPORT_DECK_ROOT", str(repo_root / "support-deck"))
-    ).resolve()
-    marker = sd_root / "src" / "api" / "app.py"
-    if not marker.is_file():
-        log.warning("Support Deck not found at %s — skipping embed", sd_root)
+    """Attach Support Deck routes when the package is present. Returns True if attached."""
+    sd_root = _resolve_support_deck_root()
+    if sd_root is None:
+        log.warning("Support Deck package not found — skipping embed")
         return False
+
+    # FAQ retrieve/classify live in this backend tree.
+    backend_dir = Path(__file__).resolve().parent
+    os.environ["BACKEND_ROOT"] = str(backend_dir)
+    # Optional pulse sibling (weekly); ignore if absent.
+    pulse = backend_dir.parent / "pulse"
+    if pulse.is_dir():
+        os.environ.setdefault("PULSE_ROOT", str(pulse))
 
     stashed = {
         key: sys.modules.pop(key)
@@ -49,6 +73,12 @@ def attach_support_deck(host: FastAPI) -> bool:
         )
         from src.config import get_settings  # type: ignore
         from src.db import init_db  # type: ignore
+
+        # Clear cached settings so BACKEND_ROOT / DB paths pick up env we just set.
+        try:
+            get_settings.cache_clear()  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
         settings = get_settings()
         db_path = Path(settings.support_deck_db)
@@ -78,7 +108,6 @@ def attach_support_deck(host: FastAPI) -> bool:
         for key in list(sys.modules):
             if key == "src" or key.startswith("src."):
                 sd_mods[key] = sys.modules.pop(key)
-        # Keep modules alive so route closures do not break after GC.
         host.state._support_deck_modules = sd_mods
         if inserted:
             try:
