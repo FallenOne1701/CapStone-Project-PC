@@ -10,6 +10,9 @@ from src import mcp_bridge
 from src.approval.store import ApprovalStore
 from src.models import ApprovalAction, ApprovalActionType, ApprovalStatus, QueueStatus
 
+# Bound during Support Deck embed (avoids lazy ``from src.api.deps`` after FAQ embed).
+_update_queue_status = None
+
 
 def content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -72,9 +75,10 @@ class ApprovalService:
         qid = action.payload_preview.get("question_id")
         if not isinstance(qid, str) or not qid:
             return
-        from src.api.deps import update_queue_status
-
-        update_queue_status(self.db_path, qid, status)
+        fn = _update_queue_status
+        if fn is None:
+            from src.api.deps import update_queue_status as fn
+        fn(self.db_path, qid, status)
 
     def _publish_if_needed(self, action: ApprovalAction) -> None:
         """Invoke MCP bridge only for Docs/Gmail publish actions."""

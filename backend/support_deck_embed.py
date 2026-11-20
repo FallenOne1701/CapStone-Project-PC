@@ -1,16 +1,7 @@
 """Compose Support Deck FastAPI routes onto the FAQ backend (Railway one-process).
 
-Backend and Support Deck both use a top-level ``src`` package. We import Support
-Deck in an isolated ``sys.modules`` window, ``include_router`` its APIs onto the
-FAQ app, then restore FAQ ``src.*``.
-
-Lazy ``from src...`` inside Support Deck handlers would otherwise resolve the FAQ
-``src`` at request time. An HTTP middleware reinstalls Support Deck modules for
-``/api/support-deck/*`` requests (and restores FAQ ``src`` afterward).
-
-Looks for Support Deck at:
-1. ``backend/support-deck`` (bundled mirror — Railway Root Directory ``/backend``)
-2. ``../support-deck`` (monorepo sibling when Root Directory is repo ``/``)
+Import Support Deck under an isolated ``src`` window, bind request-path callables
+so they never lazy-import ``src`` at request time, then restore FAQ ``src``.
 """
 
 from __future__ import annotations
@@ -19,10 +10,9 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from fastapi import FastAPI, Request
-from starlette.responses import Response
+from fastapi import FastAPI
 
 log = logging.getLogger("support_deck_embed")
 
@@ -33,71 +23,24 @@ def _resolve_support_deck_root() -> Path | None:
         return p if (p / "src" / "api" / "app.py").is_file() else None
 
     backend_dir = Path(__file__).resolve().parent
-    candidates = [
-        backend_dir / "support-deck",  # bundled for Railway Root=/backend
-        backend_dir.parent / "support-deck",  # monorepo sibling
-    ]
-    for cand in candidates:
+    for cand in (backend_dir / "support-deck", backend_dir.parent / "support-deck"):
         if (cand / "src" / "api" / "app.py").is_file():
             return cand.resolve()
     return None
 
 
-def _install_src_middleware(host: FastAPI, sd_root: Path, api_prefix: str) -> None:
-    """Swap Support Deck ``src.*`` into ``sys.modules`` for Support Deck routes."""
-
-    @host.middleware("http")
-    async def support_deck_src_context(
-        request: Request, call_next: Callable
-    ) -> Response:
-        if not request.url.path.startswith(api_prefix):
-            return await call_next(request)
-
-        sd_mods: dict[str, Any] = getattr(
-            request.app.state, "_support_deck_modules", None
-        ) or {}
-        if not sd_mods:
-            return await call_next(request)
-
-        stashed = {
-            key: sys.modules.pop(key)
-            for key in list(sys.modules)
-            if key == "src" or key.startswith("src.")
-        }
-        root = str(sd_root)
-        path_inserted = False
-        if root not in sys.path:
-            sys.path.insert(0, root)
-            path_inserted = True
-        sys.modules.update(sd_mods)
-        try:
-            return await call_next(request)
-        finally:
-            for key in list(sys.modules):
-                if key == "src" or key.startswith("src."):
-                    sd_mods[key] = sys.modules.pop(key)
-            request.app.state._support_deck_modules = sd_mods
-            if path_inserted:
-                try:
-                    sys.path.remove(root)
-                except ValueError:
-                    pass
-            sys.modules.update(stashed)
-
-
 def attach_support_deck(host: FastAPI) -> bool:
-    """Attach Support Deck routes when the package is present. Returns True if attached."""
     sd_root = _resolve_support_deck_root()
     if sd_root is None:
         log.warning("Support Deck package not found — skipping embed")
         return False
 
-    # FAQ retrieve/classify live in this backend tree.
     backend_dir = Path(__file__).resolve().parent
     os.environ["BACKEND_ROOT"] = str(backend_dir)
-    pulse = backend_dir.parent / "pulse"
-    if pulse.is_dir():
-        os.environ.setdefault("PULSE_ROOT", str(pulse))
+    for pulse in (backend_dir / "pulse", backend_dir.parent / "pulse"):
+        if (pulse / "src" / "run_pulse.py").is_file():
+            os.environ["PULSE_ROOT"] = str(pulse)
+            break
 
     stashed = {
         key: sys.modules.pop(key)
@@ -113,12 +56,18 @@ def attach_support_deck(host: FastAPI) -> bool:
     try:
         from src.api import (  # type: ignore
             approval_routes,
+            deps as sd_deps,
             queue_routes,
             sources_routes,
             weekly_routes,
         )
+        from src.approval import service as approval_service  # type: ignore
         from src.config import get_settings  # type: ignore
         from src.db import init_db  # type: ignore
+
+        # Bind so request handlers never do lazy ``from src...`` after FAQ restore.
+        sd_deps._ApprovalService = approval_service.ApprovalService
+        approval_service._update_queue_status = sd_deps.update_queue_status
 
         try:
             get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -138,7 +87,6 @@ def attach_support_deck(host: FastAPI) -> bool:
         host.include_router(weekly_routes.router, prefix=prefix)
         host.include_router(approval_routes.router, prefix=prefix)
         host.include_router(sources_routes.router, prefix=prefix)
-        _install_src_middleware(host, sd_root, prefix)
 
         log.info(
             "Support Deck embedded from %s (prefix=%s, db=%s)",

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from datetime import datetime, timezone
+
 from src.api.deps import get_db_path, list_approval_actions, serialize_model
 from src.approval.service import ApprovalService
+from src.models import ApprovalStatus, QueueStatus
 
 router = APIRouter(tags=["approvals"])
 
@@ -30,10 +33,6 @@ def approve_action(
     svc = ApprovalService(get_db_path(request))
     try:
         if not invoke_mcp:
-            from datetime import datetime, timezone
-
-            from src.models import ApprovalStatus, QueueStatus
-
             action = svc.store.update_fields(
                 action_id,
                 status=ApprovalStatus.approved,

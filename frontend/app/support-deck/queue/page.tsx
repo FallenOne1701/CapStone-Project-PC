@@ -20,7 +20,7 @@ import {
 
 const SAMPLE_QUESTIONS = [
   {
-    text: "What is the exit load if I redeem within 7 days?",
+    text: "What is the exit load on HDFC Large Cap Fund if I redeem within 7 days?",
     icon: "data_exploration",
   },
   {

@@ -10,8 +10,11 @@ from typing import Any, Callable, Iterator
 
 from src.approval.service import ApprovalService
 from src.config import get_settings
+from src.connectors.frequency import render_pulse_appendix, signals_for_pulse
 from src.db import init_db
 from src.models import ApprovalAction, ApprovalActionType
+from src.weekly.fee_detect import ThemeResult, detect_fee_confusion
+from src.weekly.fee_explainer import generate_fee_explainer, upsert_explainer
 
 
 @dataclass(frozen=True)
@@ -41,12 +44,17 @@ _DEFAULT_FEE_SOURCES = (
 @contextmanager
 def _pulse_import_context() -> Iterator[None]:
     """Prepend PULSE_ROOT and isolate `src.*` so pulse imports do not collide."""
+    import os
+
     pulse_root = str(Path(get_settings().pulse_root).resolve())
     stashed = {
         key: sys.modules.pop(key)
         for key in list(sys.modules)
         if key == "src" or key.startswith("src.")
     }
+    # FAQ load_dotenv sets GROQ_BASE_URL=.../openai/v1 which doubles the path
+    # for langchain_groq / openai/* models.
+    groq_base = os.environ.pop("GROQ_BASE_URL", None)
     inserted = False
     if pulse_root not in sys.path:
         sys.path.insert(0, pulse_root)
@@ -63,6 +71,10 @@ def _pulse_import_context() -> Iterator[None]:
             except ValueError:
                 pass
         sys.modules.update(stashed)
+        if groq_base is None:
+            os.environ.pop("GROQ_BASE_URL", None)
+        else:
+            os.environ["GROQ_BASE_URL"] = groq_base
 
 
 def _finalize_artifacts(
@@ -127,9 +139,6 @@ def _maybe_fee_explainer(
     fee_sources: list[str] | None = None,
 ) -> str | None:
     """If themes show fee confusion, generate + upsert explainer. Never calls MCP."""
-    from src.weekly.fee_detect import ThemeResult, detect_fee_confusion
-    from src.weekly.fee_explainer import generate_fee_explainer, upsert_explainer
-
     try:
         raw = json.loads(artifacts.themes_path.read_text(encoding="utf-8"))
         themes = ThemeResult.model_validate(raw)
@@ -152,8 +161,6 @@ def _append_frequency_appendix(artifacts: WeeklyArtifacts, *, db_path: Path) -> 
 
     The callout is queue counts plus the window. It does not invent Play review ids.
     """
-    from src.connectors.frequency import render_pulse_appendix, signals_for_pulse
-
     threshold = int(get_settings().frequency_threshold)
     signals = signals_for_pulse(
         window_days=7, threshold=threshold, db_path=db_path
