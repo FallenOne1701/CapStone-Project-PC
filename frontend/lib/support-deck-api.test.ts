@@ -84,7 +84,10 @@ describe("support-deck-api fetch helpers", () => {
 
     await approveAction("a1");
     await rejectAction("a2");
-    assert.equal(urls[0], "POST http://sd.test/api/support-deck/approvals/a1/approve");
+    assert.equal(
+      urls[0],
+      "POST http://sd.test/api/support-deck/approvals/a1/approve?invoke_mcp=true",
+    );
     assert.equal(urls[1], "POST http://sd.test/api/support-deck/approvals/a2/reject");
   });
 
