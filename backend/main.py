@@ -12,7 +12,7 @@ from src.api.respond import map_answer_to_response
 from src.config import get_settings
 from src.rag.orchestrator import answer_query
 
-APP_BUILD = "support-deck-embed-2"
+APP_BUILD = "support-deck-embed-3"
 
 app = FastAPI(
     title="Mutual Fund FAQ Assistant API",
