@@ -62,9 +62,16 @@ CREATE TABLE IF NOT EXISTS audit_events (
 
 
 def connect(path: str | Path) -> sqlite3.Connection:
-    con = sqlite3.connect(str(path))
+    # timeout/WAL: Approvals reads were intermittently failing with
+    # "database is locked" while Queue enqueue / weekly writes held the DB.
+    con = sqlite3.connect(str(path), timeout=30.0)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys = ON")
+    con.execute("PRAGMA busy_timeout = 30000")
+    try:
+        con.execute("PRAGMA journal_mode = WAL")
+    except sqlite3.Error:
+        pass
     return con
 
 

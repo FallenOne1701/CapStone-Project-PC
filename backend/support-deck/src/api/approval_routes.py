@@ -13,7 +13,15 @@ router = APIRouter(tags=["approvals"])
 
 @router.get("/approvals")
 def get_approvals(request: Request) -> list[dict]:
-    return [serialize_model(a) for a in list_approval_actions(get_db_path(request))]
+    try:
+        return [
+            serialize_model(a) for a in list_approval_actions(get_db_path(request))
+        ]
+    except Exception as exc:  # noqa: BLE001 — surface flaky lock/errors to UI
+        raise HTTPException(
+            status_code=500,
+            detail=f"approvals list failed: {type(exc).__name__}: {exc}",
+        ) from exc
 
 
 @router.post("/approvals/{action_id}/approve")
